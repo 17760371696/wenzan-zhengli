@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文案整理</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --primary:#5b6ef5;--primary-light:#eef0fe;--primary-dark:#4451d6;
+    --bg:#f4f5f7;--sidebar-bg:#fff;--card-bg:#fff;
+    --text:#2d3436;--text-light:#636e72;--text-lighter:#b2bec3;
+    --border:#e9ecf0;--danger:#e74c3c;--success:#00b894;
+    --shadow:0 2px 8px rgba(0,0,0,.06);--shadow-hover:0 4px 16px rgba(0,0,0,.1);
+    --radius:10px;--sidebar-w:220px;
+  }
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;font-size:14px;
+  }
+  /* ===== Sidebar ===== */
+  .sidebar{width:var(--sidebar-w);background:var(--sidebar-bg);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+  .sidebar-header{padding:24px 20px 20px;border-bottom:1px solid var(--border)}
+  .sidebar-header h1{font-size:18px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .sidebar-header .sub{font-size:12px;color:var(--text-light);margin-top:4px}
+  .nav{padding:12px;flex:1}
+  .nav-item{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius);cursor:pointer;transition:all .2s;margin-bottom:4px;color:var(--text-light);font-weight:500;user-select:none}
+  .nav-item:hover{background:var(--primary-light);color:var(--primary)}
+  .nav-item.active{background:var(--primary);color:#fff}
+  .nav-item .icon{font-size:18px;width:24px;text-align:center}
+  .nav-item .badge{margin-left:auto;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;background:rgba(0,0,0,.08);color:var(--text)}
+  .nav-item.active .badge{background:rgba(255,255,255,.25);color:#fff}
+  .nav-item .badge.has-sel{background:var(--primary);color:#fff}
+  .nav-item.active .badge.has-sel{background:rgba(255,255,255,.3);color:#fff}
+  .sidebar-footer{padding:12px;border-top:1px solid var(--border);display:flex;gap:6px}
+  .sidebar-footer .btn{flex:1;padding:6px 8px;font-size:12px;justify-content:center}
+  /* ===== Main ===== */
+  .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+  .main-header{padding:18px 28px;background:var(--card-bg);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px}
+  .main-header h2{font-size:20px;font-weight:700}
+  .main-header .actions{margin-left:auto;display:flex;gap:10px;flex-wrap:wrap}
+  .content{flex:1;overflow-y:auto;padding:24px 28px}
+  /* ===== Buttons ===== */
+  .btn{padding:8px 16px;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-dark)}
+  .btn-outline{background:transparent;color:var(--text-light);border:1px solid var(--border)}
+  .btn-outline:hover{background:var(--primary-light);color:var(--primary);border-color:var(--primary)}
+  .btn-danger{background:transparent;color:var(--danger);border:1px solid transparent}
+  .btn-danger:hover{background:#fef0ef}
+  .btn-edit{background:var(--danger);color:#fff;border:none}
+  .btn-edit:hover{background:#c0392b}
+  .btn-edit.active{background:var(--success);color:#fff}
+  .btn-edit.active:hover{background:#009478}
+  /* ===== Search & Toolbar ===== */
+  .toolbar{display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .search-bar{flex:1;min-width:200px;position:relative}
+  .search-bar input{width:100%;padding:10px 16px 10px 40px;border:1px solid var(--border);border-radius:8px;font-size:14px;background:var(--card-bg);transition:border-color .2s;font-family:inherit}
+  .search-bar input:focus{outline:none;border-color:var(--primary)}
+  .search-bar .si{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-lighter);font-size:16px}
+  .sel-count{font-size:13px;color:var(--text-light);padding:8px 14px;background:var(--primary-light);border-radius:8px;font-weight:500;white-space:nowrap}
+  .sel-count b{color:var(--primary)}
+  /* ===== Item Grid ===== */
+  .item-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+  .item-card{background:var(--card-bg);border:2px solid var(--border);border-radius:var(--radius);padding:12px 14px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:10px;user-select:none;position:relative}
+  .item-card:hover{border-color:var(--primary);box-shadow:var(--shadow-hover);transform:translateY(-1px)}
+  .item-card.selected{background:var(--primary);border-color:var(--primary);color:#fff}
+  .item-card.dragging{opacity:.35}
+  .item-card.drag-over{border-color:var(--primary);border-style:dashed;background:var(--primary-light);transform:scale(1.03)}
+  .item-card .check{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px;font-weight:700}
+  .item-card.selected .check{background:#fff;border-color:#fff;color:var(--primary)}
+  .item-card .name{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item-card .grip{cursor:grab;color:var(--text-lighter);opacity:0;transition:opacity .2s;font-size:14px}
+  .item-card:hover .grip{opacity:.7}
+  .item-card.selected .grip{color:rgba(255,255,255,.5)}
+  .item-card .del{opacity:0;transition:opacity .2s;background:none;border:none;cursor:pointer;color:var(--danger);font-size:18px;padding:0 2px;line-height:1}
+  .item-card:hover .del{opacity:.6}
+  .item-card .del:hover{opacity:1}
+  .item-card.selected .del{color:rgba(255,255,255,.8)}
+  .custom-tag{font-size:10px;background:var(--success);color:#fff;padding:1px 5px;border-radius:4px;margin-left:4px;vertical-align:middle}
+  .item-card.selected .custom-tag{background:rgba(255,255,255,.3)}
+  .item-card .rename-btn{opacity:0;transition:opacity .2s;background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:14px;padding:0 2px;line-height:1;font-family:inherit}
+  .item-card:hover .rename-btn{opacity:.6}
+  .item-card .rename-btn:hover{opacity:1!important;color:var(--primary-dark)}
+  .item-card.selected .rename-btn{color:rgba(255,255,255,.6)}
+  .item-card.selected .rename-btn:hover{color:#fff!important}
+  /* ===== Combined View ===== */
+  .combined-wrap{max-width:720px}
+  .combined-stats{display:flex;gap:16px;margin-bottom:20px}
+  .stat-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:16px 24px;flex:1;transition:box-shadow .2s}
+  .stat-card:hover{box-shadow:var(--shadow)}
+  .stat-card .lbl{font-size:12px;color:var(--text-light);margin-bottom:4px}
+  .stat-card .val{font-size:28px;font-weight:700;color:var(--primary)}
+  .combined-output{background:var(--card-bg);border:2px solid var(--border);border-radius:var(--radius);padding:24px 28px;font-size:15px;line-height:2.2;white-space:pre-wrap;word-break:break-all;min-height:100px;font-family:inherit;position:relative}
+  .combined-output .label-tag{color:var(--primary);font-weight:700}
+  .combined-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .char-count{font-size:12px;color:var(--text-lighter);text-align:right;margin-top:8px}
+  /* ===== Modal ===== */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)}
+  .modal-overlay.show{display:flex;animation:fadeIn .2s}
+  .modal{background:var(--card-bg);border-radius:16px;padding:28px;width:420px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,.2);animation:slideUp .25s}
+  .modal h3{font-size:18px;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+  .modal .field{margin-bottom:16px}
+  .modal label{display:block;font-size:13px;color:var(--text-light);margin-bottom:6px;font-weight:500}
+  .modal input,.modal select{width:100%;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit}
+  .modal input:focus,.modal select:focus{outline:none;border-color:var(--primary)}
+  .modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
+  .modal-hint{font-size:12px;color:var(--text-lighter);margin-top:6px}
+  /* ===== Toast ===== */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(120px);background:var(--text);color:#fff;padding:12px 28px;border-radius:8px;font-size:14px;z-index:2000;transition:transform .3s;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  /* ===== Empty State ===== */
+  .empty{text-align:center;padding:60px 20px;color:var(--text-lighter)}
+  .empty .ei{font-size:48px;margin-bottom:12px}
+  .empty p{margin-top:4px}
+  /* ===== Animations ===== */
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .item-card{contain:layout style}
+  /* Scrollbar */
+  .content::-webkit-scrollbar{width:8px}
+  .content::-webkit-scrollbar-track{background:transparent}
+  .content::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+  .content::-webkit-scrollbar-thumb:hover{background:var(--text-lighter)}
+  /* ===== Move buttons (上移/下移) ===== */
+  .item-card .move{opacity:0;transition:opacity .2s;background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:13px;padding:0 2px;line-height:1;font-family:inherit}
+  .item-card .move:hover{opacity:1!important;color:var(--primary-dark)}
+  .item-card.selected .move{color:rgba(255,255,255,.5)}
+  .item-card.selected .move:hover{color:#fff!important}
+  /* ===== Hamburger ===== */
+  .hamburger{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px;border-radius:6px}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:998;opacity:0;transition:opacity .3s}
+  .sidebar-overlay.show{display:block;opacity:1}
+  /* ===== Mobile Responsive ===== */
+  @media(max-width:768px){
+    .hamburger{display:flex;align-items:center;justify-content:center;flex-shrink:0}
+    .sidebar{position:fixed;left:0;top:0;bottom:0;z-index:999;transform:translateX(-100%);transition:transform .3s ease;box-shadow:2px 0 20px rgba(0,0,0,.15)}
+    .sidebar.open{transform:translateX(0)}
+    .main-header{padding:14px 14px;gap:10px}
+    .main-header h2{font-size:16px}
+    .content{padding:14px;-webkit-overflow-scrolling:touch}
+    .item-grid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:8px}
+    .item-card{padding:10px 12px;min-height:44px}
+    .item-card .name{font-size:13px}
+    .item-card .move{opacity:.45}
+    .item-card .grip{display:none}
+    .item-card .rename-btn{opacity:.45}
+    .item-card .del{opacity:.5}
+    .toolbar{gap:8px;flex-wrap:wrap}
+    .toolbar .search-bar{min-width:120px}
+    .sel-count{font-size:12px;padding:6px 10px}
+    .btn{padding:8px 12px;font-size:12px}
+    .combined-stats{flex-direction:row;flex-wrap:wrap;gap:10px}
+    .stat-card{padding:12px 14px;flex:1 1 40%;min-width:130px}
+    .stat-card .val{font-size:22px}
+    .modal{width:94vw;padding:20px;margin:0 3vw}
+    .modal h3{font-size:16px}
+    .modal input,.modal select{padding:10px 12px;font-size:16px}
+    .combined-actions{flex-direction:column}
+    .combined-actions .btn{width:100%;justify-content:center;padding:12px}
+    .combined-output{padding:16px;font-size:14px;line-height:2}
+    .toast{font-size:13px;padding:10px 20px;bottom:20px}
+  }
+  @media(max-width:420px){
+    .item-grid{grid-template-columns:1fr 1fr;gap:6px}
+    .item-card{padding:10px 10px}
+    .item-card .name{font-size:12px}
+    .main-header .actions{gap:4px}
+    .main-header .actions .btn{padding:6px 8px;font-size:11px;gap:3px}
+    .sidebar-footer{flex-wrap:wrap}
+    .sidebar-footer .btn{font-size:11px;padding:5px 6px}
+    .stat-card .lbl{font-size:11px}
+    .stat-card .val{font-size:20px}
+    .toolbar{gap:6px}
+  }
+</style>
+</head>
+<body>
+  <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+  <!-- ===== Sidebar ===== -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h1>📋 文案整理</h1>
+      <div class="sub">工作台管理系统</div>
+    </div>
+    <div class="nav">
+      <div class="nav-item" data-view="permanent" onclick="switchView('permanent')">
+        <span class="icon">🏛️</span><span>常驻</span><span class="badge" id="badge-permanent">0</span>
+      </div>
+      <div class="nav-item active" data-view="season" onclick="switchView('season')">
+        <span class="icon">🍂</span><span>季节</span><span class="badge" id="badge-season">0</span>
+      </div>
+      <div class="nav-item" data-view="gift" onclick="switchView('gift')">
+        <span class="icon">🎁</span><span>礼包</span><span class="badge" id="badge-gift">0</span>
+      </div>
+      <div class="nav-item" data-view="lottery" onclick="switchView('lottery')">
+        <span class="icon">🎰</span><span>抽奖</span><span class="badge" id="badge-lottery">0</span>
+      </div>
+      <div class="nav-item" data-view="combined" onclick="switchView('combined')">
+        <span class="icon">✨</span><span>综合</span>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-outline" onclick="exportData()" title="导出数据备份">📤 导出</button>
+      <button class="btn btn-outline" onclick="importData()" title="导入数据备份">📥 导入</button>
+      <button class="btn btn-outline" onclick="resetData()" title="恢复默认数据">🔄 重置</button>
+    </div>
+  </div>
+
+  <!-- ===== Main ===== -->
+  <div class="main">
+    <div class="main-header">
+      <button class="hamburger" onclick="toggleSidebar()" title="菜单">☰</button>
+      <h2 id="page-title">季节</h2>
+      <div class="actions" id="header-actions"></div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+
+  <!-- ===== Modal ===== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal" id="modal"></div>
+  </div>
+
+  <!-- ===== Toast ===== -->
+  <div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   文案整理 - 数据定义
+============================================================ */
+const DEFAULT_SEASONS = ['感恩','追光','归属','音韵','魔法','圣岛','预言','梦想','集结','王子','风行','潜海','表演','破碎','欧若拉','追忆','夜行','拾光','归巢','九色鹿','筑巢','二重奏','姆明','彩染','青鸟','双星','迁徙','织光','狂欢','梵高'];
+
+const DEFAULT_PERMANENT = ['晨岛','云野','雨林','霞谷','暮土','禁阁'];
+
+const DEFAULT_GIFTS = ['远行服饰','致爱装扮','向日葵裙','披肩外袍','宝藏猎人','日光水母','月华套装','阔腿牛仔','优雅三件套','女巫长裙','爱丽丝套装','光之生物','滑冰套装','海灵套装','夏日凉鞋','玉兔拖鞋','雪人暖靴','悦动跑鞋','小狗拖鞋','史力奇裤子','祥云服饰','龙鳞束身','园丁裤','暗彩裤','进行曲制服','琅骏启岁','鹊桥相会','KFC厨师','连衣裙','必胜客装扮','小黄鸭玩偶','星流面具','伯爵面具','回归童真','火焰墨镜','爱心墨镜','影院套装','紫框眼镜','幸运亨通','树精','白蝴蝶结','水母肩饰','寻宝挂饰','姆明饰品','冥龙套装','活力海牛','皮皮猫套装','有友帽子','远行发型','绒帽','波浪发型','彩虹帽','巫师帽','朋克','鸦羽兜帽','双马尾','宝骏丹心','史力奇帽子','蝴蝶与花','小海牛配饰','橘子','鲤跃龙门','暖冬绒绒','小狗头饰','桂冠','雪花发卡','雪人头饰','贝壳发夹','玉兔头饰','大耳狗发饰','大耳狗头饰','爱心发箍','绿绒卷耳','蓝色守护帽','画笔发箍','探宝翎羽帽','四叶草','粽子发箍','小黄鸭发饰','鎏金魔法帽','小黑鸭头饰','星月发饰','九色鹿角','星月耳环','金麟耳坠','彩虹耳钉','彩虹耳机','日光耳环','月光耳环','枯树枝','圣诞鹿角','向日葵耳环','云音伴游','tgc斗篷(黑底','创始人','小王子围巾','星球夹克','欧若拉之翼','奉献斗篷','莲花斗篷','妮妮斗篷','暗陨斗篷','星夜斗篷','麦浪斗篷','福娃套装','锦鲤套装','盘龙围巾','献瑞套装','玫瑰斗篷','海龟斗篷','潮汐套装','缤纷飘带','连帽斗篷','五周年线框','常驻线框','遥鲲披肩','纤云弄巧','蝙蝠套装','绿底蛛丝','皮皮猫斗篷','透明蛛丝','伯爵斗篷','鸦羽斗篷','瑞雪斗篷','白绒斗篷','雪人斗篷','羽绒服','暖冬围巾','流星斗篷','大耳狗斗篷','周年礼服','绊爱礼服','晶翼斗篷','文雀斗篷','飞蛾斗篷','绊爱套装','秘宝斗篷','风之旅人','超凡风旅','粽子斗篷','青衫落拓','小黄鸭雨衣','金穗披肩','雏鸟琴','白吉他','凯旋手碟','电吉他','欧若拉之声','小提琴','祥云伞','折扇','魔法棒','荷叶伞','向阳花伞','灯笼','黄伞','扫帚','骐骥迎福','七夕伞','秋千','跷跷板','茶几','茶壶','野餐桌','球赛','立式钢琴','音乐桌','粽香蒸笼','披萨','狐狸','海牛玩偶','记忆水晶','萌新玩偶','小船','泡泡机','南瓜背包','皮皮猫玩偶','水晶球','棉花糖烤架','海螺','奥利奥玩偶','冲浪板','大耳狗玩偶','兔子洞','大铁头','kfc兑换码','必胜客cdk'];
+
+const DEFAULT_LOTTERY = ['追光面具','金色音乐会','白底tgc','绘梦笔刷','奖杯'];
+
+const STORAGE_KEY = 'wenan-zhengli-v1';
+
+/* ============================================================
+   状态管理
+============================================================ */
+let state = {
+  permanent: [],
+  seasons: [],
+  gifts: [],
+  lottery: [],
+  currentView: 'season',
+  searchPermanent: '',
+  searchSeason: '',
+  searchGift: '',
+  searchLottery: '',
+  giftEditMode: false
+};
+
+let dragData = null;
+let justDragged = false;
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      const p = JSON.parse(saved);
+      state.permanent = p.permanent || [];
+      state.seasons = p.seasons || [];
+      state.gifts = p.gifts || [];
+      state.lottery = p.lottery || [];
+      state.currentView = p.currentView || 'season';
+      state.giftEditMode = p.giftEditMode || false;
+      // 兼容旧数据：没有permanent/lottery时初始化
+      if (state.permanent.length === 0) {
+        state.permanent = DEFAULT_PERMANENT.map((name, i) => ({ id: 'p' + i, name, custom: false, selected: false }));
+        saveState();
+      }
+      if (state.lottery.length === 0) {
+        state.lottery = DEFAULT_LOTTERY.map((name, i) => ({ id: 'l' + i, name, custom: false, selected: false }));
+        saveState();
+      }
+      return;
+    } catch(e) {}
+  }
+  // 初始化默认数据
+  state.permanent = DEFAULT_PERMANENT.map((name, i) => ({ id: 'p' + i, name, custom: false, selected: false }));
+  state.seasons = DEFAULT_SEASONS.map((name, i) => ({ id: 's' + i, name, custom: false, selected: false }));
+  state.gifts = DEFAULT_GIFTS.map((name, i) => ({ id: 'g' + i, name, custom: false, selected: false }));
+  state.lottery = DEFAULT_LOTTERY.map((name, i) => ({ id: 'l' + i, name, custom: false, selected: false }));
+  saveState();
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    permanent: state.permanent,
+    seasons: state.seasons,
+    gifts: state.gifts,
+    lottery: state.lottery,
+    currentView: state.currentView,
+    giftEditMode: state.giftEditMode
+  }));
+}
+
+/* ============================================================
+   数据操作
+============================================================ */
+function getItems(type) {
+  if (type === 'season') return state.seasons;
+  if (type === 'permanent') return state.permanent;
+  if (type === 'lottery') return state.lottery;
+  return state.gifts;
+}
+
+function getSelected(type) { return getItems(type).filter(i => i.selected); }
+
+function toggleSelect(type, id) {
+  const item = getItems(type).find(i => i.id === id);
+  if (item) { item.selected = !item.selected; saveState(); render(); }
+}
+
+function selectAll(type) {
+  getItems(type).forEach(i => i.selected = true);
+  saveState(); render();
+}
+
+function deselectAll(type) {
+  getItems(type).forEach(i => i.selected = false);
+  saveState(); render();
+}
+
+function addItem(type, name, position) {
+  const items = getItems(type);
+  const newItem = { id: type + '_' + Date.now() + '_' + Math.random().toString(36).slice(2,6), name: name.trim(), custom: true, selected: false };
+  if (position === 'end' || position >= items.length) {
+    items.push(newItem);
+  } else {
+    items.splice(position, 0, newItem);
+  }
+  saveState(); render();
+}
+
+function deleteItem(type, id) {
+  const items = getItems(type);
+  const idx = items.findIndex(i => i.id === id);
+  if (idx !== -1) {
+    items.splice(idx, 1);
+    saveState(); render();
+    showToast('已删除');
+  }
+}
+
+function reorderItems(type, fromIdx, toIdx) {
+  const items = getItems(type);
+  if (fromIdx === toIdx) return;
+  const [moved] = items.splice(fromIdx, 1);
+  const adjusted = fromIdx < toIdx ? toIdx - 1 : toIdx;
+  items.splice(adjusted, 0, moved);
+  saveState(); render();
+}
+
+function clearAllSelections() {
+  state.permanent.forEach(i => i.selected = false);
+  state.seasons.forEach(i => i.selected = false);
+  state.lottery.forEach(i => i.selected = false);
+  state.gifts.forEach(i => i.selected = false);
+  saveState(); render();
+  showToast('已清空所有选择');
+}
+
+function moveItem(type, id, direction) {
+  const items = getItems(type);
+  const idx = items.findIndex(i => i.id === id);
+  if (idx === -1) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= items.length) return;
+  const [moved] = items.splice(idx, 1);
+  items.splice(newIdx, 0, moved);
+  saveState(); render();
+}
+
+function toggleGiftEditMode() {
+  state.giftEditMode = !state.giftEditMode;
+  saveState();
+  render();
+  showToast(state.giftEditMode ? '编辑模式已开启' : '编辑模式已关闭');
+}
+
+function renameItem(type, id) {
+  const items = getItems(type);
+  const item = items.find(i => i.id === id);
+  if (!item) return;
+  showRenameModal(type, id, item.name);
+}
+
+function showRenameModal(type, id, oldName) {
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal');
+  modal.innerHTML =
+    '<h3>✏️ 修改名称</h3>' +
+    '<div class="field"><label>原名称</label>' +
+    '<input type="text" value="' + escapeHtml(oldName) + '" disabled style="opacity:.6"></div>' +
+    '<div class="field"><label>新名称</label>' +
+    '<input type="text" id="modal-newname" placeholder="请输入新名称" autofocus>' +
+    '<div class="modal-hint">输入后按 Enter 可快速确认</div></div>' +
+    '<div class="modal-actions">' +
+    '<button class="btn btn-outline" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="confirmRename(\'' + type + '\',\'' + id + '\')">确认修改</button>' +
+    '</div>';
+  overlay.classList.add('show');
+  setTimeout(function() {
+    const input = document.getElementById('modal-newname');
+    if (input) {
+      input.focus();
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') confirmRename(type, id);
+      });
+    }
+  }, 50);
+}
+
+function confirmRename(type, id) {
+  const newName = document.getElementById('modal-newname').value.trim();
+  if (!newName) { showToast('请输入新名称'); return; }
+  const item = getItems(type).find(i => i.id === id);
+  if (item) {
+    item.name = newName;
+    saveState(); render();
+    showToast('已修改为：' + newName);
+  }
+  closeModal();
+}
+
+/* ============================================================
+   视图切换
+============================================================ */
+function switchView(view) {
+  state.currentView = view;
+  saveState();
+  closeSidebar();
+  render();
+}
+
+/* ============================================================
+   渲染
+============================================================ */
+function render() {
+  // 更新侧边栏激活状态
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === state.currentView);
+  });
+  // 更新徽章
+  const selPermanent = getSelected('permanent').length;
+  const selSeason = getSelected('season').length;
+  const selGift = getSelected('gift').length;
+  const selLottery = getSelected('lottery').length;
+  const bp = document.getElementById('badge-permanent');
+  const bs = document.getElementById('badge-season');
+  const bg = document.getElementById('badge-gift');
+  const bl = document.getElementById('badge-lottery');
+  if (bp) { bp.textContent = selPermanent; bp.classList.toggle('has-sel', selPermanent > 0); }
+  bs.textContent = selSeason;
+  bg.textContent = selGift;
+  bs.classList.toggle('has-sel', selSeason > 0);
+  bg.classList.toggle('has-sel', selGift > 0);
+  if (bl) { bl.textContent = selLottery; bl.classList.toggle('has-sel', selLottery > 0); }
+  // 渲染主内容
+  if (state.currentView === 'season') renderItemsView('season');
+  else if (state.currentView === 'gift') renderItemsView('gift');
+  else if (state.currentView === 'permanent') renderItemsView('permanent');
+  else if (state.currentView === 'lottery') renderItemsView('lottery');
+  else renderCombinedView();
+}
+
+function renderItemsView(type) {
+  const isSeason = type === 'season';
+  const isPermanent = type === 'permanent';
+  const isGift = type === 'gift';
+  const isLottery = type === 'lottery';
+  const items = getItems(type);
+  const searchText = isPermanent ? state.searchPermanent : (isSeason ? state.searchSeason : (isLottery ? state.searchLottery : state.searchGift));
+  const filtered = items.filter(i => i.name.toLowerCase().includes(searchText.toLowerCase()));
+  const selCount = items.filter(i => i.selected).length;
+
+  const titleMap = { permanent: '🏛️ 常驻', season: '🍂 季节', gift: '🎁 礼包', lottery: '🎰 抽奖' };
+  const newBtnLabel = isSeason ? '新季节' : (isLottery ? '新抽奖项' : '新礼包');
+  const searchLabel = isPermanent ? '常驻' : (isSeason ? '季节' : (isLottery ? '抽奖项' : '礼包'));
+
+  document.getElementById('page-title').textContent = titleMap[type];
+  let actionsHtml =
+    '<button class="btn btn-outline" onclick="selectAll(\'' + type + '\')">全选</button>' +
+    '<button class="btn btn-outline" onclick="deselectAll(\'' + type + '\')">取消全选</button>';
+  if (!isPermanent) {
+    actionsHtml += '<button class="btn btn-primary" onclick="showAddModal(\'' + type + '\')">+ ' + newBtnLabel + '</button>';
+  }
+  // 礼包不可自定义移动位置
+  document.getElementById('header-actions').innerHTML = actionsHtml;
+
+  const content = document.getElementById('content');
+
+  if (items.length === 0) {
+    content.innerHTML = '<div class="empty"><div class="ei">' + (isSeason ? '🍂' : (isPermanent ? '🏛️' : (isLottery ? '🎰' : '🎁'))) + '</div><p>暂无数据</p>' + (isPermanent ? '' : '<p>点击「' + newBtnLabel + '」按钮添加</p>') + '</div>';
+    return;
+  }
+
+  let html = '<div class="toolbar">' +
+    '<div class="search-bar"><span class="si">🔍</span>' +
+    '<input type="text" placeholder="搜索' + searchLabel + '..." value="' + escapeHtml(searchText) + '" oninput="onSearch(\'' + type + '\', this.value)"></div>' +
+    '<div class="sel-count">已选 <b>' + selCount + '</b> / ' + items.length + '</div>' +
+    '</div>';
+
+  if (filtered.length === 0) {
+    html += '<div class="empty"><div class="ei">🔍</div><p>未找到匹配结果</p></div>';
+  } else {
+    html += '<div class="item-grid">';
+    filtered.forEach(function(item) {
+      var realIdx = items.indexOf(item);
+      var sel = item.selected ? ' selected' : '';
+      var customTag = item.custom ? '<span class="custom-tag">自</span>' : '';
+      // 礼包不可自定义移动位置
+      var canEdit = false;
+      var delBtn = '';
+      var moveBtns = '';
+      var gripSpan = '';
+      var renameBtn = '';
+      var draggable = 'false';
+      html += '<div class="item-card' + sel + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSelect(\'' + type + '\',\'' + item.id + '\')">' +
+        '<div class="check">' + (item.selected ? '✓' : '') + '</div>' +
+        '<div class="name">' + escapeHtml(item.name) + customTag + '</div>' +
+        renameBtn + gripSpan + moveBtns + delBtn +
+        '</div>';
+    });
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+  applySearchFilter(type);
+}
+
+function formatPermanentText(selItems) {
+  const total = state.permanent.length;
+  if (selItems.length === total) return '全图毕业';
+  if (selItems.length <= 3) return selItems.map(i => i.name).join(' ');
+  return selItems.map(i => i.name.charAt(0)).join('');
+}
+
+function formatSeasonText(selItems) {
+  const total = state.seasons.length;
+  if (selItems.length === 0) return '';
+  // 全部选中 → 感恩不断
+  if (selItems.length === total) return '感恩不断';
+  // 从末尾往前找连续选中块的起点
+  var suffixStart = -1;
+  for (var i = total - 1; i >= 0; i--) {
+    if (state.seasons[i].selected) { suffixStart = i; }
+    else { break; }
+  }
+  // 如果末尾连续块 ≥ 2 个，用 "X不断"
+  if (suffixStart !== -1 && (total - suffixStart) >= 2) {
+    var prefixNames = [];
+    for (var j = 0; j < suffixStart; j++) {
+      if (state.seasons[j].selected) prefixNames.push(state.seasons[j].name);
+    }
+    var suffixName = state.seasons[suffixStart].name;
+    if (prefixNames.length > 0) return prefixNames.join(' ') + ' ' + suffixName + '不断';
+    return suffixName + '不断';
+  }
+  // 无连续后缀 → 正常列出
+  return selItems.map(i => i.name).join(' ');
+}
+
+function formatGiftText(selItems) {
+  const total = state.gifts.length;
+  if (selItems.length === total) return '全礼包';
+  const unselected = state.gifts.filter(i => !i.selected);
+  if (unselected.length <= 15) return '全礼包瑕 ' + unselected.map(i => i.name).join(' ');
+  return selItems.map(i => i.name).join(' ');
+}
+
+function renderCombinedView() {
+  document.getElementById('page-title').textContent = '✨ 综合';
+  document.getElementById('header-actions').innerHTML =
+    '<button class="btn btn-outline" onclick="clearAllSelections()">清空选择</button>' +
+    '<button class="btn btn-primary" onclick="copyCombined()">📋 复制文案</button>';
+
+  const selPermanent = getSelected('permanent');
+  const selSeasons = getSelected('season');
+  const selGifts = getSelected('gift');
+  const selLottery = getSelected('lottery');
+  const content = document.getElementById('content');
+
+  if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0) {
+    content.innerHTML = '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
+    return;
+  }
+
+  const permanentText = formatPermanentText(selPermanent);
+  const seasonNames = formatSeasonText(selSeasons);
+  const giftText = formatGiftText(selGifts);
+  const lotteryNames = selLottery.map(i => i.name).join(' ');
+  const combinedText = '常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + '\n抽奖：' + lotteryNames;
+  const charLen = combinedText.length;
+
+  let html = '<div class="combined-wrap">';
+  html += '<div class="combined-stats">';
+  html += '<div class="stat-card"><div class="lbl">已选常驻</div><div class="val">' + selPermanent.length + '</div></div>';
+  html += '<div class="stat-card"><div class="lbl">已选季节</div><div class="val">' + selSeasons.length + '</div></div>';
+  html += '<div class="stat-card"><div class="lbl">已选礼包</div><div class="val">' + selGifts.length + '</div></div>';
+  html += '<div class="stat-card"><div class="lbl">已选抽奖</div><div class="val">' + selLottery.length + '</div></div>';
+  html += '<div class="stat-card"><div class="lbl">总字符数</div><div class="val">' + charLen + '</div></div>';
+  html += '</div>';
+
+  // 预览输出
+  html += '<div class="combined-output" id="combined-output"></div>';
+  html += '<div class="char-count">共 ' + charLen + ' 字符</div>';
+
+  html += '<div class="combined-actions">';
+  html += '<button class="btn btn-primary" onclick="copyCombined()">📋 复制文案</button>';
+  html += '<button class="btn btn-outline" onclick="selectAll(\'permanent\');switchView(\'permanent\')">去选常驻</button>';
+  html += '<button class="btn btn-outline" onclick="selectAll(\'season\');switchView(\'season\')">去选季节</button>';
+  html += '<button class="btn btn-outline" onclick="selectAll(\'gift\');switchView(\'gift\')">去选礼包</button>';
+  html += '<button class="btn btn-outline" onclick="selectAll(\'lottery\');switchView(\'lottery\')">去选抽奖</button>';
+  html += '<button class="btn btn-danger" onclick="clearAllSelections()">清空选择</button>';
+  html += '</div>';
+
+  // 选中明细
+  if (selPermanent.length > 0) {
+    html += '<div style="margin-top:24px"><div style="font-size:13px;color:var(--text-light);margin-bottom:8px;font-weight:600">🏛️ 已选常驻明细</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    selPermanent.forEach(function(p) {
+      html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSelect(\'permanent\',\'' + p.id + '\')" title="点击取消选择">' + escapeHtml(p.name) + ' ✕</span>';
+    });
+    html += '</div></div>';
+  }
+  if (selSeasons.length > 0) {
+    html += '<div style="margin-top:24px"><div style="font-size:13px;color:var(--text-light);margin-bottom:8px;font-weight:600">🍂 已选季节明细</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    selSeasons.forEach(function(s) {
+      html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSelect(\'season\',\'' + s.id + '\')" title="点击取消选择">' + escapeHtml(s.name) + ' ✕</span>';
+    });
+    html += '</div></div>';
+  }
+  if (selGifts.length > 0) {
+    html += '<div style="margin-top:16px"><div style="font-size:13px;color:var(--text-light);margin-bottom:8px;font-weight:600">🎁 已选礼包明细</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    selGifts.forEach(function(g) {
+      html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSelect(\'gift\',\'' + g.id + '\')" title="点击取消选择">' + escapeHtml(g.name) + ' ✕</span>';
+    });
+    html += '</div></div>';
+  }
+  if (selLottery.length > 0) {
+    html += '<div style="margin-top:16px"><div style="font-size:13px;color:var(--text-light);margin-bottom:8px;font-weight:600">🎰 已选抽奖明细</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
+    selLottery.forEach(function(l) {
+      html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSelect(\'lottery\',\'' + l.id + '\')" title="点击取消选择">' + escapeHtml(l.name) + ' ✕</span>';
+    });
+    html += '</div></div>';
+  }
+
+  html += '</div>';
+  content.innerHTML = html;
+  document.getElementById('combined-output').textContent = combinedText;
+}
+
+/* ============================================================
+   搜索
+============================================================ */
+function onSearch(type, value) {
+  if (type === 'permanent') state.searchPermanent = value;
+  else if (type === 'season') state.searchSeason = value;
+  else if (type === 'lottery') state.searchLottery = value;
+  else state.searchGift = value;
+  applySearchFilter(type);
+  // 更新已选计数
+  const items = getItems(type);
+  const selCount = items.filter(i => i.selected).length;
+  const el = document.querySelector('.sel-count');
+  if (el) el.innerHTML = '已选 <b>' + selCount + '</b> / ' + items.length;
+}
+
+function applySearchFilter(type) {
+  let searchText = '';
+  if (type === 'permanent') searchText = state.searchPermanent;
+  else if (type === 'season') searchText = state.searchSeason;
+  else if (type === 'lottery') searchText = state.searchLottery;
+  else searchText = state.searchGift;
+  searchText = searchText.toLowerCase();
+  document.querySelectorAll('.item-card').forEach(function(card) {
+    if (card.dataset.type !== type) return;
+    const name = (card.dataset.name || '').toLowerCase();
+    card.style.display = name.includes(searchText) ? '' : 'none';
+  });
+}
+
+/* ============================================================
+   拖拽排序
+============================================================ */
+function initDragAndDrop() {
+  const content = document.getElementById('content');
+
+  content.addEventListener('dragstart', function(e) {
+    const card = e.target.closest('.item-card');
+    if (!card) return;
+    dragData = { type: card.dataset.type, index: parseInt(card.dataset.index) };
+    card.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    try { e.dataTransfer.setData('text/plain', card.dataset.index); } catch(err) {}
+  });
+
+  content.addEventListener('dragover', function(e) {
+    if (!dragData) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    const card = e.target.closest('.item-card');
+    if (!card || card.dataset.type !== dragData.type) return;
+    content.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    card.classList.add('drag-over');
+  });
+
+  content.addEventListener('drop', function(e) {
+    if (!dragData) return;
+    e.preventDefault();
+    const card = e.target.closest('.item-card');
+    if (!card || card.dataset.type !== dragData.type) return;
+    const toIdx = parseInt(card.dataset.index);
+    reorderItems(dragData.type, dragData.index, toIdx);
+  });
+
+  content.addEventListener('dragend', function() {
+    content.querySelectorAll('.dragging, .drag-over').forEach(el => {
+      el.classList.remove('dragging', 'drag-over');
+    });
+    justDragged = true;
+    setTimeout(function() { justDragged = false; }, 100);
+    dragData = null;
+  });
+}
+
+/* ============================================================
+   新增弹窗
+============================================================ */
+function showAddModal(type) {
+  const isSeason = type === 'season';
+  const isLottery = type === 'lottery';
+  const items = getItems(type);
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal');
+
+  let posField = '';
+  if (!isSeason && !isLottery) {
+    let posOptions = '<option value="end">添加到末尾</option>';
+    for (let i = 0; i < items.length; i++) {
+      posOptions += '<option value="' + i +">插入到第 " + (i + 1) + ' 位（' + escapeHtml(items[i].name) + ' 前面）</option>';
+    }
+    posField = '<div class="field"><label>插入位置</label>' +
+      '<select id="modal-position">' + posOptions + '</select>' +
+      '<div class="modal-hint">也可添加后在编辑模式下通过 ▲▼ 调整位置</div></div>';
+  }
+
+  modal.innerHTML =
+    '<h3>' + (isSeason ? '🍂 新增季节' : (isLottery ? '🎰 新增抽奖项' : '🎁 新增礼包')) + '</h3>' +
+    '<div class="field"><label>名称</label>' +
+    '<input type="text" id="modal-name" placeholder="请输入' + (isSeason ? '季节' : (isLottery ? '抽奖项' : '礼包')) + '名称" autofocus>' +
+    '<div class="modal-hint">输入后按 Enter 可快速确认</div></div>' +
+    posField +
+    '<div class="modal-actions">' +
+    '<button class="btn btn-outline" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="confirmAdd(\'' + type + '\')">确认添加</button>' +
+    '</div>';
+
+  overlay.classList.add('show');
+  setTimeout(function() {
+    const input = document.getElementById('modal-name');
+    if (input) {
+      input.focus();
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') confirmAdd(type);
+      });
+    }
+  }, 50);
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+}
+
+function confirmAdd(type) {
+  const name = document.getElementById('modal-name').value.trim();
+  if (!name) { showToast('请输入名称'); return; }
+  const posEl = document.getElementById('modal-position');
+  const position = (type === 'season' || !posEl || posEl.value === 'end') ? 'end' : parseInt(posEl.value);
+  addItem(type, name, position);
+  closeModal();
+  showToast('添加成功：' + name);
+}
+
+/* ============================================================
+   复制
+============================================================ */
+function copyCombined() {
+  const permanentText = formatPermanentText(getSelected('permanent'));
+  const seasonNames = formatSeasonText(getSelected('season'));
+  const giftText = formatGiftText(getSelected('gift'));
+  const lotteryNames = getSelected('lottery').map(i => i.name).join(' ');
+  const text = '常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + '\n抽奖：' + lotteryNames;
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(function() {
+      showToast('✅ 已复制到剪贴板');
+    }).catch(function() { fallbackCopy(text); });
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); showToast('✅ 已复制到剪贴板'); }
+  catch(e) { showToast('复制失败，请手动选择文本复制'); }
+  document.body.removeChild(ta);
+}
+
+/* ============================================================
+   导出 / 导入 / 重置
+============================================================ */
+function exportData() {
+  const data = { permanent: state.permanent, seasons: state.seasons, gifts: state.gifts, lottery: state.lottery, exportDate: new Date().toISOString() };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = '文案整理_数据备份_' + new Date().toISOString().slice(0,10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('数据已导出');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  input.onchange = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (data.permanent && Array.isArray(data.permanent)) state.permanent = data.permanent;
+        if (data.seasons && Array.isArray(data.seasons)) state.seasons = data.seasons;
+        if (data.gifts && Array.isArray(data.gifts)) state.gifts = data.gifts;
+        if (data.lottery && Array.isArray(data.lottery)) state.lottery = data.lottery;
+        saveState();
+        render();
+        showToast('数据已导入');
+      } catch(err) {
+        showToast('导入失败：文件格式错误');
+      }
+    };
+    reader.readAsText(file);
+  };
+  input.click();
+}
+
+function resetData() {
+  showConfirmModal('重置数据', '确定要恢复默认数据吗？所有自定义添加的季节和礼包将被清除，选择状态也会重置。', function() {
+    state.permanent = DEFAULT_PERMANENT.map((name, i) => ({ id: 'p' + i, name, custom: false, selected: false }));
+    state.seasons = DEFAULT_SEASONS.map((name, i) => ({ id: 's' + i, name, custom: false, selected: false }));
+    state.gifts = DEFAULT_GIFTS.map((name, i) => ({ id: 'g' + i, name, custom: false, selected: false }));
+    state.lottery = DEFAULT_LOTTERY.map((name, i) => ({ id: 'l' + i, name, custom: false, selected: false }));
+    saveState();
+    render();
+    showToast('数据已重置为默认');
+  });
+}
+
+function showConfirmModal(title, message, onConfirm) {
+  const overlay = document.getElementById('modal-overlay');
+  const modal = document.getElementById('modal');
+  modal.innerHTML =
+    '<h3>⚠️ ' + title + '</h3>' +
+    '<p style="color:var(--text-light);line-height:1.6;margin-bottom:8px">' + message + '</p>' +
+    '<div class="modal-actions">' +
+    '<button class="btn btn-outline" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-danger" id="confirm-ok">确认</button>' +
+    '</div>';
+  overlay.classList.add('show');
+  document.getElementById('confirm-ok').onclick = function() {
+    closeModal();
+    onConfirm();
+  };
+}
+
+/* ============================================================
+   工具函数
+============================================================ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.classList.add('show');
+  clearTimeout(toast._timer);
+  toast._timer = setTimeout(function() { toast.classList.remove('show'); }, 2200);
+}
+
+/* ============================================================
+   初始化
+============================================================ */
+function toggleSidebar() {
+  document.querySelector('.sidebar').classList.toggle('open');
+  document.getElementById('sidebar-overlay').classList.toggle('show');
+  document.body.style.overflow = document.querySelector('.sidebar.open') ? 'hidden' : '';
+}
+
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebar-overlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function init() {
+  loadState();
+  initDragAndDrop();
+
+  // 点击遮罩关闭弹窗
+  document.getElementById('modal-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  // ESC 关闭弹窗
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeModal();
+  });
+
+  render();
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
