@@ -265,7 +265,19 @@ function loadState() {
       const p = JSON.parse(saved);
       state.permanent = p.permanent || [];
       state.seasons = p.seasons || [];
-      state.gifts = p.gifts || [];
+      // 合并礼包：按 DEFAULT_GIFTS 顺序重建，保留旧选中状态，自动补入新增默认项；自定义项追加末尾
+      (function(){
+        var oldG = p.gifts || [];
+        var oldGMap = {};
+        var customG = [];
+        oldG.forEach(function(g){
+          if (DEFAULT_GIFTS.indexOf(g.name) !== -1 && !oldGMap[g.name]) oldGMap[g.name] = g;
+          else customG.push(g);
+        });
+        state.gifts = DEFAULT_GIFTS.map(function(name,i){
+          return oldGMap[name] || { id:'g'+i, name:name, custom:false, selected:false };
+        }).concat(customG);
+      })();
       state.lottery = p.lottery || [];
       state.currentView = p.currentView || 'season';
       state.giftEditMode = p.giftEditMode || false;
