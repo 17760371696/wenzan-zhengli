@@ -600,7 +600,7 @@ function renderCombinedView() {
   const content = document.getElementById('content');
 
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0) {
-    content.innerHTML = '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
+    content.innerHTML = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div><div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
     return;
   }
 
@@ -612,6 +612,7 @@ function renderCombinedView() {
   const charLen = combinedText.length;
 
   let html = '<div class="combined-wrap">';
+  html += '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
   html += '<div class="combined-stats">';
   html += '<div class="stat-card"><div class="lbl">已选常驻</div><div class="val">' + selPermanent.length + '</div></div>';
   html += '<div class="stat-card"><div class="lbl">已选季节</div><div class="val">' + selSeasons.length + '</div></div>';
