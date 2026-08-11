@@ -275,8 +275,9 @@ function loadState() {
           else customG.push(g);
         });
         state.gifts = DEFAULT_GIFTS.map(function(name,i){
-          return oldGMap[name] || { id:'g'+i, name:name, custom:false, selected:false };
-        }).concat(customG);
+          var old = oldGMap[name];
+          return { id:'g'+i, name:name, custom:false, selected: old ? old.selected : false };
+        }).concat(customG.map(function(g,i){ return { id:'gc'+i, name:g.name, custom:true, selected:g.selected }; }));
       })();
       state.lottery = p.lottery || [];
       state.currentView = p.currentView || 'season';
