@@ -678,12 +678,18 @@ function onSearch(type, value) {
   else if (type === 'season') state.searchSeason = value;
   else if (type === 'lottery') state.searchLottery = value;
   else state.searchGift = value;
-  applySearchFilter(type);
-  // 更新已选计数
-  const items = getItems(type);
-  const selCount = items.filter(i => i.selected).length;
-  const el = document.querySelector('.sel-count');
-  if (el) el.innerHTML = '已选 <b>' + selCount + '</b> / ' + items.length;
+  // 重新渲染列表（从全部items按新搜索词过滤），保持搜索框焦点和光标位置
+  var activeInput = document.querySelector('.search-bar input');
+  var cursorStart = activeInput ? activeInput.selectionStart : null;
+  var cursorEnd = activeInput ? activeInput.selectionEnd : null;
+  renderItemsView(type);
+  var newInput = document.querySelector('.search-bar input');
+  if (newInput) {
+    newInput.focus();
+    if (cursorStart !== null) {
+      try { newInput.setSelectionRange(cursorStart, cursorEnd); } catch(e) {}
+    }
+  }
 }
 
 function applySearchFilter(type) {
