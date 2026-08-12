@@ -257,6 +257,26 @@ let state = {
 
 let undoBackup = null; // 清空选择时的回退备份
 
+// 从 localStorage 恢复回退备份（防止刷新丢失）
+(function() {
+  try {
+    var saved = JSON.parse(localStorage.getItem('wenzan_undo') || 'null');
+    if (saved && (Date.now() - saved.timestamp) <= 10 * 60 * 1000) {
+      undoBackup = saved;
+    } else if (saved) {
+      localStorage.removeItem('wenzan_undo');
+    }
+  } catch(e) {}
+})();
+
+function saveUndoBackup() {
+  try { localStorage.setItem('wenzan_undo', JSON.stringify(undoBackup)); } catch(e) {}
+}
+function clearUndoBackup() {
+  undoBackup = null;
+  try { localStorage.removeItem('wenzan_undo'); } catch(e) {}
+}
+
 let dragData = null;
 let justDragged = false;
 
@@ -373,14 +393,18 @@ function reorderItems(type, fromIdx, toIdx) {
 }
 
 function clearAllSelections() {
-  // 备份当前选中状态，10分钟内可回退
-  undoBackup = {
-    permanent: state.permanent.map(i => ({ id: i.id, selected: i.selected })),
-    seasons: state.seasons.map(i => ({ id: i.id, selected: i.selected })),
-    lottery: state.lottery.map(i => ({ id: i.id, selected: i.selected })),
-    gifts: state.gifts.map(i => ({ id: i.id, selected: i.selected })),
-    timestamp: Date.now()
-  };
+  // 如果当前已有选中内容才备份（避免空清空覆盖之前的备份）
+  var hasAny = state.permanent.some(i=>i.selected) || state.seasons.some(i=>i.selected) || state.lottery.some(i=>i.selected) || state.gifts.some(i=>i.selected);
+  if (hasAny) {
+    undoBackup = {
+      permanent: state.permanent.map(i => ({ id: i.id, selected: i.selected })),
+      seasons: state.seasons.map(i => ({ id: i.id, selected: i.selected })),
+      lottery: state.lottery.map(i => ({ id: i.id, selected: i.selected })),
+      gifts: state.gifts.map(i => ({ id: i.id, selected: i.selected })),
+      timestamp: Date.now()
+    };
+    saveUndoBackup();
+  }
   state.permanent.forEach(i => i.selected = false);
   state.seasons.forEach(i => i.selected = false);
   state.lottery.forEach(i => i.selected = false);
@@ -393,7 +417,7 @@ function undoClearSelections() {
   if (!undoBackup) { showToast('没有可回退的清空操作'); return; }
   var elapsed = Date.now() - undoBackup.timestamp;
   if (elapsed > 10 * 60 * 1000) {
-    undoBackup = null;
+    clearUndoBackup();
     render();
     showToast('已超过10分钟，无法回退');
     return;
@@ -407,7 +431,7 @@ function undoClearSelections() {
   restore(state.seasons, undoBackup.seasons);
   restore(state.lottery, undoBackup.lottery);
   restore(state.gifts, undoBackup.gifts);
-  undoBackup = null;
+  clearUndoBackup();
   saveState(); render();
   showToast('已回退清空操作');
 }
@@ -623,9 +647,13 @@ function formatGiftText(selItems) {
 
 function renderCombinedView() {
   document.getElementById('page-title').textContent = '✨ 综合';
-  document.getElementById('header-actions').innerHTML =
-    '<button class="btn btn-outline" onclick="clearAllSelections()">清空选择</button>' +
-    '<button class="btn btn-primary" onclick="copyCombined()">📋 复制文案</button>';
+  var headerBtns = '<button class="btn btn-outline" onclick="clearAllSelections()">清空选择</button>';
+  if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
+    var remain = Math.ceil((10 * 60 * 1000 - (Date.now() - undoBackup.timestamp)) / 1000 / 60);
+    headerBtns += '<button class="btn btn-outline" style="border-color:#e6a23c;color:#e6a23c" onclick="undoClearSelections()">↩ 回退清空（剩' + remain + '分钟）</button>';
+  }
+  headerBtns += '<button class="btn btn-primary" onclick="copyCombined()">📋 复制文案</button>';
+  document.getElementById('header-actions').innerHTML = headerBtns;
 
   const selPermanent = getSelected('permanent');
   const selSeasons = getSelected('season');
@@ -634,7 +662,13 @@ function renderCombinedView() {
   const content = document.getElementById('content');
 
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0) {
-    content.innerHTML = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div><div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
+    var emptyHtml = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
+    emptyHtml += '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
+    if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
+      var remainE = Math.ceil((10 * 60 * 1000 - (Date.now() - undoBackup.timestamp)) / 1000 / 60);
+      emptyHtml += '<div style="text-align:center;margin-top:16px"><button class="btn btn-outline" style="border-color:#e6a23c;color:#e6a23c" onclick="undoClearSelections()">↩ 回退清空（剩' + remainE + '分钟）</button></div>';
+    }
+    content.innerHTML = emptyHtml;
     return;
   }
 
