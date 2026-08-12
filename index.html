@@ -255,6 +255,8 @@ let state = {
   giftEditMode: false
 };
 
+let undoBackup = null; // 清空选择时的回退备份
+
 let dragData = null;
 let justDragged = false;
 
@@ -371,12 +373,43 @@ function reorderItems(type, fromIdx, toIdx) {
 }
 
 function clearAllSelections() {
+  // 备份当前选中状态，10分钟内可回退
+  undoBackup = {
+    permanent: state.permanent.map(i => ({ id: i.id, selected: i.selected })),
+    seasons: state.seasons.map(i => ({ id: i.id, selected: i.selected })),
+    lottery: state.lottery.map(i => ({ id: i.id, selected: i.selected })),
+    gifts: state.gifts.map(i => ({ id: i.id, selected: i.selected })),
+    timestamp: Date.now()
+  };
   state.permanent.forEach(i => i.selected = false);
   state.seasons.forEach(i => i.selected = false);
   state.lottery.forEach(i => i.selected = false);
   state.gifts.forEach(i => i.selected = false);
   saveState(); render();
-  showToast('已清空所有选择');
+  showToast('已清空所有选择 · 10分钟内可回退');
+}
+
+function undoClearSelections() {
+  if (!undoBackup) { showToast('没有可回退的清空操作'); return; }
+  var elapsed = Date.now() - undoBackup.timestamp;
+  if (elapsed > 10 * 60 * 1000) {
+    undoBackup = null;
+    render();
+    showToast('已超过10分钟，无法回退');
+    return;
+  }
+  function restore(items, backup) {
+    var map = {};
+    backup.forEach(function(b){ map[b.id] = b.selected; });
+    items.forEach(function(i){ if (map[i.id] !== undefined) i.selected = map[i.id]; });
+  }
+  restore(state.permanent, undoBackup.permanent);
+  restore(state.seasons, undoBackup.seasons);
+  restore(state.lottery, undoBackup.lottery);
+  restore(state.gifts, undoBackup.gifts);
+  undoBackup = null;
+  saveState(); render();
+  showToast('已回退清空操作');
 }
 
 function moveItem(type, id, direction) {
@@ -633,6 +666,10 @@ function renderCombinedView() {
   html += '<button class="btn btn-outline" onclick="selectAll(\'gift\');switchView(\'gift\')">去选礼包</button>';
   html += '<button class="btn btn-outline" onclick="selectAll(\'lottery\');switchView(\'lottery\')">去选抽奖</button>';
   html += '<button class="btn btn-danger" onclick="clearAllSelections()">清空选择</button>';
+  if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
+    var remain = Math.ceil((10 * 60 * 1000 - (Date.now() - undoBackup.timestamp)) / 1000 / 60);
+    html += '<button class="btn btn-outline" style="border-color:#e6a23c;color:#e6a23c" onclick="undoClearSelections()">↩ 回退清空（剩' + remain + '分钟）</button>';
+  }
   html += '</div>';
 
   // 选中明细
