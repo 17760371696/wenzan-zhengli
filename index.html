@@ -547,7 +547,6 @@ function renderItemsView(type) {
   const isLottery = type === 'lottery';
   const items = getItems(type);
   const searchText = isPermanent ? state.searchPermanent : (isSeason ? state.searchSeason : (isLottery ? state.searchLottery : state.searchGift));
-  const filtered = items.filter(i => i.name.toLowerCase().includes(searchText.toLowerCase()));
   const selCount = items.filter(i => i.selected).length;
 
   const titleMap = { permanent: '🏛️ 常驻', season: '🍂 季节', gift: '🎁 礼包', lottery: '🎰 抽奖' };
@@ -573,33 +572,24 @@ function renderItemsView(type) {
 
   let html = '<div class="toolbar">' +
     '<div class="search-bar"><span class="si">🔍</span>' +
-    '<input type="text" placeholder="搜索' + searchLabel + '..." value="' + escapeHtml(searchText) + '" oninput="onSearch(\'' + type + '\', this.value)" oncompositionstart="isComposing=true" oncompositionend="isComposing=false;onSearch(\'' + type + '\', this.value)"></div>' +
+    '<input type="text" id="search-input" placeholder="搜索' + searchLabel + '..." value="' + escapeHtml(searchText) + '" oninput="onSearch(\'' + type + '\', this.value)"></div>' +
     '<div class="sel-count">已选 <b>' + selCount + '</b> / ' + items.length + '</div>' +
     '</div>';
 
-  if (filtered.length === 0) {
-    html += '<div class="empty"><div class="ei">🔍</div><p>未找到匹配结果</p></div>';
-  } else {
-    html += '<div class="item-grid">';
-    filtered.forEach(function(item) {
-      var realIdx = items.indexOf(item);
-      var sel = item.selected ? ' selected' : '';
-      var customTag = item.custom ? '<span class="custom-tag">自</span>' : '';
-      // 礼包不可自定义移动位置
-      var canEdit = false;
-      var delBtn = '';
-      var moveBtns = '';
-      var gripSpan = '';
-      var renameBtn = '';
-      var draggable = 'false';
-      html += '<div class="item-card' + sel + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSelect(\'' + type + '\',\'' + item.id + '\')">' +
-        '<div class="check">' + (item.selected ? '✓' : '') + '</div>' +
-        '<div class="name">' + escapeHtml(item.name) + customTag + '</div>' +
-        renameBtn + gripSpan + moveBtns + delBtn +
-        '</div>';
-    });
-    html += '</div>';
-  }
+  // 渲染全部 items（不按搜索词过滤渲染），DOM 始终完整，搜索时只显示/隐藏卡片
+  html += '<div class="item-grid">';
+  items.forEach(function(item) {
+    var realIdx = items.indexOf(item);
+    var sel = item.selected ? ' selected' : '';
+    var customTag = item.custom ? '<span class="custom-tag">自</span>' : '';
+    var draggable = 'false';
+    html += '<div class="item-card' + sel + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSelect(\'' + type + '\',\'' + item.id + '\')">' +
+      '<div class="check">' + (item.selected ? '✓' : '') + '</div>' +
+      '<div class="name">' + escapeHtml(item.name) + customTag + '</div>' +
+      '</div>';
+  });
+  html += '</div>';
+  html += '<div class="empty no-result" style="display:none"><div class="ei">🔍</div><p>未找到匹配结果</p></div>';
 
   content.innerHTML = html;
   applySearchFilter(type);
@@ -744,27 +734,18 @@ function renderCombinedView() {
 /* ============================================================
    搜索
 ============================================================ */
-let isComposing = false; // 中文输入法拼音输入中标记
-
 function onSearch(type, value) {
   if (type === 'permanent') state.searchPermanent = value;
   else if (type === 'season') state.searchSeason = value;
   else if (type === 'lottery') state.searchLottery = value;
   else state.searchGift = value;
-  // 拼音输入过程中不重新渲染（否则输入框被重建会打断中文输入法）
-  if (isComposing) return;
-  // 重新渲染列表（从全部items按新搜索词过滤），保持搜索框焦点和光标位置
-  var activeInput = document.querySelector('.search-bar input');
-  var cursorStart = activeInput ? activeInput.selectionStart : null;
-  var cursorEnd = activeInput ? activeInput.selectionEnd : null;
-  renderItemsView(type);
-  var newInput = document.querySelector('.search-bar input');
-  if (newInput) {
-    newInput.focus();
-    if (cursorStart !== null) {
-      try { newInput.setSelectionRange(cursorStart, cursorEnd); } catch(e) {}
-    }
-  }
+  // 只显示/隐藏卡片，不重建 DOM（避免打断中文输入法）
+  applySearchFilter(type);
+  // 更新已选计数
+  var items = getItems(type);
+  var selCount = items.filter(i => i.selected).length;
+  var el = document.querySelector('.sel-count');
+  if (el) el.innerHTML = '已选 <b>' + selCount + '</b> / ' + items.length;
 }
 
 function applySearchFilter(type) {
@@ -774,11 +755,22 @@ function applySearchFilter(type) {
   else if (type === 'lottery') searchText = state.searchLottery;
   else searchText = state.searchGift;
   searchText = searchText.toLowerCase();
+  var visibleCount = 0;
   document.querySelectorAll('.item-card').forEach(function(card) {
     if (card.dataset.type !== type) return;
-    const name = (card.dataset.name || '').toLowerCase();
-    card.style.display = name.includes(searchText) ? '' : 'none';
+    var name = (card.dataset.name || '').toLowerCase();
+    if (name.includes(searchText)) {
+      card.style.display = '';
+      visibleCount++;
+    } else {
+      card.style.display = 'none';
+    }
   });
+  // 无匹配时显示"未找到"提示
+  var noResult = document.querySelector('.no-result');
+  if (noResult) {
+    noResult.style.display = (visibleCount === 0 && searchText.length > 0) ? '' : 'none';
+  }
 }
 
 /* ============================================================
