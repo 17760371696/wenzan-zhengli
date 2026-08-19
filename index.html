@@ -572,7 +572,7 @@ function renderItemsView(type) {
 
   let html = '<div class="toolbar">' +
     '<div class="search-bar"><span class="si">🔍</span>' +
-    '<input type="text" id="search-input" placeholder="搜索' + searchLabel + '..." value="' + escapeHtml(searchText) + '" oninput="onSearch(\'' + type + '\', this.value)"></div>' +
+    '<input type="text" class="search-input" placeholder="搜索' + searchLabel + '..." value="' + escapeHtml(searchText) + '"></div>' +
     '<div class="sel-count">已选 <b>' + selCount + '</b> / ' + items.length + '</div>' +
     '</div>';
 
@@ -593,6 +593,28 @@ function renderItemsView(type) {
 
   content.innerHTML = html;
   applySearchFilter(type);
+  // 用 addEventListener + debounce 绑定搜索事件，避免 inline oninput 在移动端导致字符重复
+  var searchInput = content.querySelector('.search-input');
+  if (searchInput) {
+    var debounceTimer = null;
+    var currentType = type;
+    searchInput.addEventListener('input', function(e) {
+      var val = e.target.value;
+      if (currentType === 'permanent') state.searchPermanent = val;
+      else if (currentType === 'season') state.searchSeason = val;
+      else if (currentType === 'lottery') state.searchLottery = val;
+      else state.searchGift = val;
+      // 延迟 200ms 再操作 DOM，避免输入过程中 DOM 修改导致字符重复/输入法中断
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function() {
+        applySearchFilter(currentType);
+        var items = getItems(currentType);
+        var selCount = items.filter(function(i){ return i.selected; }).length;
+        var el = document.querySelector('.sel-count');
+        if (el) el.innerHTML = '已选 <b>' + selCount + '</b> / ' + items.length;
+      }, 200);
+    });
+  }
 }
 
 function formatPermanentText(selItems) {
