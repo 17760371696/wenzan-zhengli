@@ -244,14 +244,19 @@ const DEFAULT_LOTTERY = ['追光面具','金色音乐会','白底tgc','绘梦笔
 
 const STORAGE_KEY = 'wenan-zhengli-v1';
 
-// 迁徙季节的子选项
-const MIGRATION_SUBS = ['鞋子','裤子','面具'];
+// 带子选项的季节（点卡片展开子按钮，不直接选中）
+const SEASON_SUBS = {
+  '迁徙': ['鞋子','裤子','面具'],
+  '织光': ['面具','发型','斗篷'],
+  '狂欢': ['发型','斗篷'],
+  '梵高': ['发型','斗篷','茶壶']
+};
 
-// 创建季节项（迁徙带子选项）
+// 创建季节项（带子选项的季节含 subItems）
 function makeSeasonItem(name, i) {
   var item = { id: 's' + i, name: name, custom: false, selected: false };
-  if (name === '迁徙') {
-    item.subItems = MIGRATION_SUBS.map(function(n){ return { name: n, selected: false }; });
+  if (SEASON_SUBS[name]) {
+    item.subItems = SEASON_SUBS[name].map(function(n){ return { name: n, selected: false }; });
   }
   return item;
 }
@@ -265,6 +270,7 @@ let state = {
   gifts: [],
   lottery: [],
   currentView: 'season',
+  subExpandedName: null, // 当前展开子选项面板的季节名（如 '迁徙'）
   searchPermanent: '',
   searchSeason: '',
   searchGift: '',
@@ -321,10 +327,10 @@ function loadState() {
       state.lottery = p.lottery || [];
       state.currentView = p.currentView || 'season';
       state.giftEditMode = p.giftEditMode || false;
-      // 兼容旧数据：季节里"迁徙"没有 subItems 时补上（旧选中状态=三件全选）
+      // 兼容旧数据：带子选项的季节没有 subItems 时补上（旧选中状态=全部子项全选）
       state.seasons.forEach(function(s){
-        if (s.name === '迁徙' && !s.subItems) {
-          s.subItems = MIGRATION_SUBS.map(function(n){ return { name: n, selected: !!s.selected }; });
+        if (SEASON_SUBS[s.name] && !s.subItems) {
+          s.subItems = SEASON_SUBS[s.name].map(function(n){ return { name: n, selected: !!s.selected }; });
         }
       });
       // 兼容旧数据：没有permanent/lottery时初始化
@@ -398,19 +404,19 @@ function deselectAll(type) {
   saveState(); render();
 }
 
-// 展开/收起迁徙的子选项面板
-function toggleMigrationPanel() {
-  state.migrationExpanded = !state.migrationExpanded;
+// 展开/收起某个季节的子选项面板
+function toggleSeasonSubPanel(name) {
+  state.subExpandedName = (state.subExpandedName === name) ? null : name;
   render();
 }
 
-// 切换迁徙的某个子选项
-function toggleMigrationSub(subIdx) {
-  var mig = state.seasons.find(function(s){ return s.name === '迁徙'; });
-  if (mig && mig.subItems && mig.subItems[subIdx]) {
-    mig.subItems[subIdx].selected = !mig.subItems[subIdx].selected;
-    // 三个全选 → 迁徙整体算选中；否则不算
-    mig.selected = mig.subItems.every(function(s){ return s.selected; });
+// 切换某个季节的某个子选项
+function toggleSeasonSub(name, subIdx) {
+  var season = state.seasons.find(function(s){ return s.name === name; });
+  if (season && season.subItems && season.subItems[subIdx]) {
+    season.subItems[subIdx].selected = !season.subItems[subIdx].selected;
+    // 全部子项选中 → 季节整体算选中；否则不算
+    season.selected = season.subItems.every(function(s){ return s.selected; });
     saveState(); render();
   }
 }
@@ -654,20 +660,21 @@ function renderItemsView(type) {
     var customTag = item.custom ? '<span class="custom-tag">自</span>' : '';
     var draggable = 'false';
     if (item.subItems) {
-      // 迁徙：点击展开子选项面板，不直接选中
+      // 带子选项的季节：点击展开子选项面板，不直接选中
       var someSub = item.subItems.some(function(s){ return s.selected; });
       var partialTag = (!item.selected && someSub) ? ' partial' : '';
-      var arrow = state.migrationExpanded ? '▾' : '▸';
-      html += '<div class="item-card' + sel + partialTag + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleMigrationPanel()">' +
+      var expanded = state.subExpandedName === item.name;
+      var arrow = expanded ? '▾' : '▸';
+      html += '<div class="item-card' + sel + partialTag + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSeasonSubPanel(\'' + item.name + '\')">' +
         '<div class="check">' + (item.selected ? '✓' : (someSub ? '−' : '')) + '</div>' +
         '<div class="name">' + escapeHtml(item.name) + customTag + '</div>' +
         '<span style="font-size:11px;color:var(--text-lighter)">' + arrow + '</span>' +
         '</div>';
-      // 展开时显示三个子按钮（占满整行）
-      if (state.migrationExpanded) {
+      // 展开时显示子按钮（占满整行）
+      if (expanded) {
         html += '<div class="sub-panel" style="grid-column:1/-1">';
         item.subItems.forEach(function(sub, si) {
-          html += '<button class="sub-btn' + (sub.selected ? ' active' : '') + '" onclick="event.stopPropagation();toggleMigrationSub(' + si + ')">' + escapeHtml(sub.name) + '</button>';
+          html += '<button class="sub-btn' + (sub.selected ? ' active' : '') + '" onclick="event.stopPropagation();toggleSeasonSub(\'' + item.name + '\',' + si + ')">' + escapeHtml(sub.name) + '</button>';
         });
         html += '</div>';
       }
@@ -716,13 +723,15 @@ function formatPermanentText(selItems) {
 
 function formatSeasonText(selItems) {
   const total = state.seasons.length;
-  // 迁徙部分选中描述："迁徙有裤子"、"迁徙有裤子和面具"
-  var mig = state.seasons.find(function(s){ return s.name === '迁徙'; });
-  var migDesc = '';
-  if (mig && mig.subItems && !mig.selected) {
-    var pickedSubs = mig.subItems.filter(function(s){ return s.selected; }).map(function(s){ return s.name; });
-    if (pickedSubs.length > 0) migDesc = '迁徙有' + pickedSubs.join('和');
-  }
+  // 部分选中描述："迁徙有裤子"、"织光有面具和斗篷"（按季节顺序拼接）
+  var partialDescs = [];
+  state.seasons.forEach(function(s){
+    if (s.subItems && !s.selected) {
+      var pickedSubs = s.subItems.filter(function(sub){ return sub.selected; }).map(function(sub){ return sub.name; });
+      if (pickedSubs.length > 0) partialDescs.push(s.name + '有' + pickedSubs.join('和'));
+    }
+  });
+  var partialText = partialDescs.join(' ');
   var base = '';
   if (selItems.length > 0) {
     // 全部选中 → 感恩不断
@@ -750,9 +759,9 @@ function formatSeasonText(selItems) {
       }
     }
   }
-  // 附加迁徙描述
-  if (migDesc) {
-    return base ? base + ' ' + migDesc : migDesc;
+  // 附加部分选中季节描述
+  if (partialText) {
+    return base ? base + ' ' + partialText : partialText;
   }
   return base;
 }
@@ -781,10 +790,10 @@ function renderCombinedView() {
   const selLottery = getSelected('lottery');
   const content = document.getElementById('content');
 
-  // 迁徙部分选中也不算空状态
-  var migItem = state.seasons.find(function(s){ return s.name === '迁徙'; });
-  var migPartial = migItem && migItem.subItems && !migItem.selected && migItem.subItems.some(function(s){ return s.selected; });
-  if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !migPartial) {
+  // 部分选中（子项有选但整体未全选）也不算空状态
+  var partialSeasons = state.seasons.filter(function(s){ return s.subItems && !s.selected && s.subItems.some(function(sub){ return sub.selected; }); });
+  var hasPartial = partialSeasons.length > 0;
+  if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !hasPartial) {
     var emptyHtml = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
     emptyHtml += '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
     if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
@@ -837,19 +846,19 @@ function renderCombinedView() {
     });
     html += '</div></div>';
   }
-  if (selSeasons.length > 0 || migPartial) {
+  if (selSeasons.length > 0 || hasPartial) {
     html += '<div style="margin-top:24px"><div style="font-size:13px;color:var(--text-light);margin-bottom:8px;font-weight:600">🍂 已选季节明细</div><div style="display:flex;flex-wrap:wrap;gap:6px">';
     selSeasons.forEach(function(s) {
       html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSelect(\'season\',\'' + s.id + '\')" title="点击取消选择">' + escapeHtml(s.name) + ' ✕</span>';
     });
-    // 迁徙部分选中显示子项明细
-    if (migPartial) {
-      migItem.subItems.forEach(function(sub, si) {
+    // 部分选中的季节显示子项明细
+    partialSeasons.forEach(function(s) {
+      s.subItems.forEach(function(sub, si) {
         if (sub.selected) {
-          html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleMigrationSub(' + si + ')" title="点击取消选择">迁徙·' + escapeHtml(sub.name) + ' ✕</span>';
+          html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSeasonSub(\'' + s.name + '\',' + si + ')" title="点击取消选择">' + escapeHtml(s.name) + '·' + escapeHtml(sub.name) + ' ✕</span>';
         }
       });
-    }
+    });
     html += '</div></div>';
   }
   if (selGifts.length > 0) {
