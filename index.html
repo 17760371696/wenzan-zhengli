@@ -70,6 +70,17 @@
   .item-card.has-card:hover{border-color:#d4b02a}
   .item-card.has-card .check{background:#ffe9a3;border-color:#e3c33f;color:#8a6a12}
   .item-card.has-card .name{color:#8a6a12}
+  /* 部分选中（选了子项物品但未全选）：淡黄消失，显示浅色半选 */
+  .item-card.partial{border-color:var(--primary);background:var(--primary-light)}
+  .item-card.partial .check{background:#fff;border-color:var(--primary);color:var(--primary)}
+  /* 季节卡片最右侧的展开键（选子项物品用） */
+  .expand-btn{background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:14px;padding:2px 6px;line-height:1;font-family:inherit;flex-shrink:0;transition:color .15s}
+  .expand-btn:hover{color:var(--primary)}
+  .item-card.selected .expand-btn{color:rgba(255,255,255,.75)}
+  .item-card.selected .expand-btn:hover{color:#fff}
+  .item-card.has-card .expand-btn{color:#c9a51e}
+  .item-card.has-card .expand-btn:hover{color:#8a6a12}
+  .item-card.partial .expand-btn{color:var(--primary)}
   .sub-panel{display:flex;gap:10px;flex-wrap:wrap;padding:4px 2px}
   .sub-btn{background:var(--card-bg);border:2px solid var(--border);border-radius:20px;padding:8px 22px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all .15s;font-family:inherit}
   .sub-btn:hover{border-color:var(--primary)}
@@ -384,11 +395,19 @@ function getSelected(type) { return getItems(type).filter(i => i.selected); }
 function toggleSelect(type, id) {
   const item = getItems(type).find(i => i.id === id);
   if (item) {
-    // 季节（无子选项）三态循环：未选 → 有卡(淡黄) → 毕业 → 未选
-    if (type === 'season' && !item.subItems) {
-      if (!item.selected && !item.hasCard) { item.hasCard = true; }
-      else if (item.hasCard && !item.selected) { item.hasCard = false; item.selected = true; }
-      else if (item.selected) { item.selected = false; }
+    // 季节三态循环：未选 → 有卡(淡黄) → 毕业 → 未选
+    if (type === 'season') {
+      if (!item.selected && !item.hasCard) {
+        // 未选：子项已选过物品 → 直接毕业；否则 → 有卡
+        if (item.subItems && item.subItems.some(function(s){ return s.selected; })) {
+          item.selected = true;
+          item.subItems.forEach(function(s){ s.selected = true; });
+        } else {
+          item.hasCard = true;
+        }
+      }
+      else if (item.hasCard && !item.selected) { item.hasCard = false; item.selected = true; if (item.subItems) item.subItems.forEach(s => s.selected = true); }
+      else if (item.selected) { item.selected = false; item.hasCard = false; if (item.subItems) item.subItems.forEach(s => s.selected = false); }
       saveState(); render();
       return;
     }
@@ -439,7 +458,9 @@ function toggleSeasonSub(name, subIdx) {
   var season = state.seasons.find(function(s){ return s.name === name; });
   if (season && season.subItems && season.subItems[subIdx]) {
     season.subItems[subIdx].selected = !season.subItems[subIdx].selected;
-    // 全部子项选中 → 季节整体算选中；否则不算
+    // 一旦操作了子项（选了东西）→ 有卡(淡黄)状态消失
+    if (season.hasCard) season.hasCard = false;
+    // 全部子项选中 → 季节整体算毕业；否则不算
     season.selected = season.subItems.every(function(s){ return s.selected; });
     saveState(); render();
   }
@@ -688,15 +709,19 @@ function renderItemsView(type) {
     var customTag = item.custom ? '<span class="custom-tag">自</span>' : '';
     var draggable = 'false';
     if (item.subItems) {
-      // 带子选项的季节：点击展开子选项面板，不直接选中；部分选中=有卡（淡黄）
+      // 带子选项的季节：点卡片三态（未选→有卡→毕业→未选），最右侧展开键展开/收起子选项面板
       var someSub = item.subItems.some(function(s){ return s.selected; });
-      var partialTag = (!item.selected && someSub) ? ' has-card' : '';
+      var statusClass = '';
+      var checkMark = '';
+      if (item.selected) { statusClass = ' selected'; checkMark = '✓'; }
+      else if (item.hasCard && !someSub) { statusClass = ' has-card'; checkMark = '卡'; }
+      else if (someSub) { statusClass = ' partial'; checkMark = '−'; }
       var expanded = state.subExpandedName === item.name;
       var arrow = expanded ? '▾' : '▸';
-      html += '<div class="item-card' + sel + partialTag + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSeasonSubPanel(\'' + item.name + '\')">' +
-        '<div class="check">' + (item.selected ? '✓' : (someSub ? '卡' : '')) + '</div>' +
+      html += '<div class="item-card' + statusClass + '" data-type="' + type + '" data-index="' + realIdx + '" data-name="' + escapeHtml(item.name) + '" draggable="' + draggable + '" onclick="if(!justDragged)toggleSelect(\'' + type + '\',\'' + item.id + '\')">' +
+        '<div class="check">' + checkMark + '</div>' +
         '<div class="name">' + escapeHtml(item.name) + customTag + '</div>' +
-        '<span style="font-size:11px;color:var(--text-lighter)">' + arrow + '</span>' +
+        '<button class="expand-btn" onclick="event.stopPropagation();toggleSeasonSubPanel(\'' + item.name + '\')" title="' + (expanded ? '收起' : '展开选择物品') + '">' + arrow + '</button>' +
         '</div>';
       // 展开时显示子按钮（占满整行）
       if (expanded) {
@@ -783,10 +808,12 @@ function formatSeasonText(selItems) {
   // 2) 有卡部分：按季节顺序，淡黄(有卡)的季节写在最后面
   //    普通季节：名字连写 + "有卡"（如 姆明彩染有卡）
   //    带子选项的季节部分选中：保留 "迁徙有裤子" 详细格式
+  //    只有淡黄(纯有卡，未操作子项)的才写"有卡"
   var cardNames = [];
   var partialDescs = [];
   state.seasons.forEach(function(s){
-    if (s.hasCard && !s.selected) cardNames.push(s.name);
+    var subPicked = s.subItems ? s.subItems.some(function(x){ return x.selected; }) : false;
+    if (s.hasCard && !s.selected && !subPicked) cardNames.push(s.name);
     if (s.subItems && !s.selected) {
       var pickedSubs = s.subItems.filter(function(sub){ return sub.selected; }).map(function(sub){ return sub.name; });
       if (pickedSubs.length > 0) partialDescs.push(s.name + '有' + pickedSubs.join('和'));
@@ -794,7 +821,8 @@ function formatSeasonText(selItems) {
   });
   var cardText = cardNames.length > 0 ? cardNames.join('') + '有卡' : '';
   var partialText = partialDescs.join(' ');
-  var tail = [cardText, partialText].filter(Boolean).join(' ');
+  // 顺序：毕业部分 → 子项部分选中 → 有卡（有卡写在最后面）
+  var tail = [partialText, cardText].filter(Boolean).join(' ');
   return base ? (tail ? base + ' ' + tail : base) : tail;
 }
 
@@ -824,7 +852,7 @@ function renderCombinedView() {
 
   // 部分选中（子项有选但整体未全选）或有卡（淡黄）的季节也不算空状态
   var partialSeasons = state.seasons.filter(function(s){ return s.subItems && !s.selected && s.subItems.some(function(sub){ return sub.selected; }); });
-  var cardSeasons = state.seasons.filter(function(s){ return s.hasCard && !s.selected; });
+  var cardSeasons = state.seasons.filter(function(s){ return s.hasCard && !s.selected && !(s.subItems && s.subItems.some(function(sub){ return sub.selected; })); });
   var hasPartial = partialSeasons.length > 0 || cardSeasons.length > 0;
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !hasPartial) {
     var emptyHtml = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
@@ -888,11 +916,11 @@ function renderCombinedView() {
     cardSeasons.forEach(function(s) {
       html += '<span style="background:#fff3c4;color:#8a6a12;padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="cancelSeasonCard(\'' + s.id + '\')" title="点击取消有卡">' + escapeHtml(s.name) + '·卡 ✕</span>';
     });
-    // 部分选中的季节显示子项明细
+    // 部分选中的季节显示子项明细（浅蓝，与卡片半选一致）
     partialSeasons.forEach(function(s) {
       s.subItems.forEach(function(sub, si) {
         if (sub.selected) {
-          html += '<span style="background:#fff3c4;color:#8a6a12;padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSeasonSub(\'' + s.name + '\',' + si + ')" title="点击取消选择">' + escapeHtml(s.name) + '·' + escapeHtml(sub.name) + ' ✕</span>';
+          html += '<span style="background:var(--primary-light);color:var(--primary);padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer" onclick="toggleSeasonSub(\'' + s.name + '\',' + si + ')" title="点击取消选择">' + escapeHtml(s.name) + '·' + escapeHtml(sub.name) + ' ✕</span>';
         }
       });
     });
