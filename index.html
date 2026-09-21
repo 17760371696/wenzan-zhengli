@@ -73,14 +73,14 @@
   /* 部分选中（选了子项物品但未全选）：淡黄消失，显示浅色半选 */
   .item-card.partial{border-color:var(--primary);background:var(--primary-light)}
   .item-card.partial .check{background:#fff;border-color:var(--primary);color:var(--primary)}
-  /* 季节卡片最右侧的展开键（选子项物品用）——加大点击区域，避免误触整条卡片 */
-  .expand-btn{background:var(--bg);border:1px solid var(--border);cursor:pointer;color:var(--text-light);font-size:15px;padding:0;line-height:1;font-family:inherit;flex-shrink:0;transition:all .15s;border-radius:8px;width:38px;height:34px;display:inline-flex;align-items:center;justify-content:center;margin:0 -6px 0 4px;touch-action:manipulation}
-  .expand-btn:hover{color:var(--primary);border-color:var(--primary)}
-  .item-card.selected .expand-btn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.4);color:#fff}
-  .item-card.selected .expand-btn:hover{background:rgba(255,255,255,.3)}
-  .item-card.has-card .expand-btn{background:#ffefb8;border-color:#e3c33f;color:#8a6a12}
-  .item-card.has-card .expand-btn:hover{background:#ffe9a3}
-  .item-card.partial .expand-btn{background:#fff;border-color:var(--primary);color:var(--primary)}
+  /* 季节卡片最右侧的展开键：视觉保持小箭头，用 padding 撑大可点区域，负 margin 抵消布局影响 */
+  .expand-btn{background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:14px;padding:13px 12px;margin:-13px -8px -13px -8px;line-height:1;font-family:inherit;flex-shrink:0;transition:color .15s;touch-action:manipulation}
+  .expand-btn:hover{color:var(--primary)}
+  .item-card.selected .expand-btn{color:rgba(255,255,255,.75)}
+  .item-card.selected .expand-btn:hover{color:#fff}
+  .item-card.has-card .expand-btn{color:#c9a51e}
+  .item-card.has-card .expand-btn:hover{color:#8a6a12}
+  .item-card.partial .expand-btn{color:var(--primary)}
   .sub-panel{display:flex;gap:10px;flex-wrap:wrap;padding:4px 2px}
   .sub-btn{background:var(--card-bg);border:2px solid var(--border);border-radius:20px;padding:8px 22px;cursor:pointer;font-size:14px;font-weight:500;color:var(--text);transition:all .15s;font-family:inherit}
   .sub-btn:hover{border-color:var(--primary)}
