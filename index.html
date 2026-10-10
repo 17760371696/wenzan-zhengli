@@ -154,6 +154,39 @@
   .item-card.selected .move:hover{color:#fff!important}
   /* ===== Hamburger ===== */
   .hamburger{display:none;background:none;border:none;font-size:22px;cursor:pointer;color:var(--text);padding:4px 8px;border-radius:6px}
+  /* ===== 测身高模块 ===== */
+  .height-wrap{max-width:760px}
+  .height-sec{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:16px}
+  .height-sec h3{font-size:15px;font-weight:700;margin-bottom:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .height-sec h3 .h-sub{font-weight:400;font-size:12px;color:var(--text-lighter)}
+  .height-code-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .height-code-row input{flex:1;min-width:180px;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-size:15px;letter-spacing:1px;font-family:inherit}
+  .height-code-row input:focus{outline:none;border-color:var(--primary)}
+  .hlink-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px;margin-top:14px}
+  .hlink{display:flex;flex-direction:column;gap:4px;padding:12px 14px;border:2px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;background:var(--card-bg);text-align:left;font-family:inherit}
+  .hlink:hover{border-color:var(--primary);box-shadow:var(--shadow-hover);transform:translateY(-1px)}
+  .hlink .t{font-weight:600;font-size:14px;color:var(--primary)}
+  .hlink .d{font-size:12px;color:var(--text-light);line-height:1.5}
+  .height-tips{font-size:12.5px;color:var(--text-light);line-height:1.9;margin-top:12px;background:var(--primary-light);border-radius:8px;padding:10px 14px}
+  .height-table{width:100%;border-collapse:collapse;font-size:13px}
+  .height-table th,.height-table td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  .height-table th{color:var(--text-light);font-weight:600;font-size:12px}
+  .height-table td:first-child{font-weight:700;white-space:nowrap}
+  .record-card{background:var(--card-bg);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;transition:box-shadow .2s}
+  .record-card:hover{box-shadow:var(--shadow)}
+  .record-card .rname{font-weight:700;font-size:15px;margin-right:4px}
+  .h-badge{padding:3px 10px;border-radius:12px;font-size:12px;font-weight:600;white-space:nowrap}
+  .h-badge.cur{background:var(--primary-light);color:var(--primary)}
+  .h-badge.max{background:#e8f7ef;color:#00875a}
+  .h-badge.min{background:#fdf0e7;color:#c96a1f}
+  .record-card .rdate{font-size:12px;color:var(--text-lighter);margin-left:auto;white-space:nowrap}
+  .record-card .rcode{font-size:12px;color:var(--text-light);cursor:pointer}
+  .record-card .rcode:hover{color:var(--primary)}
+  .record-card .rnote{font-size:12.5px;color:var(--text-light);line-height:1.6}
+  .record-actions{display:flex;gap:4px}
+  .record-actions button{background:none;border:none;cursor:pointer;color:var(--text-lighter);font-size:14px;padding:4px 6px;border-radius:6px;transition:color .15s;font-family:inherit;touch-action:manipulation}
+  .record-actions button:hover{color:var(--primary)}
+  .record-actions .rd:hover{color:var(--danger)}
   .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:998;opacity:0;transition:opacity .3s}
   .sidebar-overlay.show{display:block;opacity:1}
   /* ===== Mobile Responsive ===== */
@@ -185,6 +218,11 @@
     .combined-actions .btn{width:100%;justify-content:center;padding:12px}
     .combined-output{padding:16px;font-size:14px;line-height:2}
     .toast{font-size:13px;padding:10px 20px;bottom:20px}
+    .hlink-grid{grid-template-columns:1fr 1fr}
+    .hlink{padding:10px 12px}
+    .hlink .d{font-size:11px}
+    .record-card .rdate{margin-left:0;width:100%;text-align:right}
+    .record-card .rcode{padding:4px 0}
   }
   @media(max-width:420px){
     .item-grid{grid-template-columns:1fr 1fr;gap:6px}
@@ -220,6 +258,9 @@
       </div>
       <div class="nav-item" data-view="lottery" onclick="switchView('lottery')">
         <span class="icon">🎰</span><span>抽奖</span><span class="badge" id="badge-lottery">0</span>
+      </div>
+      <div class="nav-item" data-view="height" onclick="switchView('height')">
+        <span class="icon">📏</span><span>测身高</span>
       </div>
       <div class="nav-item" data-view="combined" onclick="switchView('combined')">
         <span class="icon">✨</span><span>综合</span>
@@ -705,6 +746,7 @@ function render() {
   else if (state.currentView === 'gift') renderItemsView('gift');
   else if (state.currentView === 'permanent') renderItemsView('permanent');
   else if (state.currentView === 'lottery') renderItemsView('lottery');
+  else if (state.currentView === 'height') renderHeightView();
   else renderCombinedView();
 }
 
@@ -998,6 +1040,207 @@ function renderCombinedView() {
 }
 
 /* ============================================================
+   测身高模块（好友码快速查询 + 身高档案 + 对照表）
+   独立存储，不受"重置数据/导出导入"影响
+============================================================ */
+const HEIGHT_STORAGE_KEY = 'wenzan-height-v1';
+let heightRecords = [];
+let heightCode = '';
+
+function loadHeightData() {
+  try {
+    var d = JSON.parse(localStorage.getItem(HEIGHT_STORAGE_KEY) || '{}');
+    heightRecords = Array.isArray(d.records) ? d.records : [];
+    heightCode = d.code || '';
+  } catch(e) { heightRecords = []; heightCode = ''; }
+}
+
+function saveHeightData() {
+  try { localStorage.setItem(HEIGHT_STORAGE_KEY, JSON.stringify({ records: heightRecords, code: heightCode })); } catch(e) {}
+}
+
+// 号数 → 类型标签
+function heightTagLabel(n) {
+  n = parseInt(n, 10);
+  if (isNaN(n)) return '';
+  if (n === 0) return '永高';
+  if (n === 1) return '伪永高';
+  if (n >= 2 && n <= 7) return '中等';
+  if (n >= 8 && n <= 13) return '小个子';
+  if (n === 14) return '永矮';
+  return '';
+}
+
+function copyText(t) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(t).then(function() { showToast('✅ 已复制'); }).catch(function() { fallbackCopy(t); });
+  } else {
+    fallbackCopy(t);
+  }
+}
+
+function copyHeightCode() {
+  var v = document.getElementById('height-code').value.trim();
+  if (!v) { showToast('请先输入好友码'); return; }
+  copyText(v);
+}
+
+function renderHeightView() {
+  document.getElementById('page-title').textContent = '📏 测身高';
+  document.getElementById('header-actions').innerHTML =
+    '<button class="btn btn-primary" onclick="openHeightModal(-1)">＋ 新建身高档案</button>';
+  var content = document.getElementById('content');
+  var html = '<div class="height-wrap">';
+
+  // 1) 好友码快速查询
+  html += '<div class="height-sec"><h3>🔍 快速查询</h3>' +
+    '<div class="height-code-row">' +
+    '<input type="text" id="height-code" placeholder="输入好友码，如 1234-5678" value="' + escapeHtml(heightCode) + '" maxlength="9" inputmode="numeric">' +
+    '<button class="btn btn-outline" onclick="copyHeightCode()">📋 复制好友码</button>' +
+    '</div>' +
+    '<div class="hlink-grid">' +
+    '<button class="hlink" onclick="window.open(\'https://sky.t1qq.com/\',\'_blank\')"><span class="t">sky.t1qq.com</span><span class="d">好友码查询 · 每人免费1次，之后需点数</span></button>' +
+    '<button class="hlink" onclick="window.open(\'https://sky.1iic.cn/\',\'_blank\')"><span class="t">sky.1iic.cn</span><span class="d">好友码查询 · 支持国服 iOS / 安卓</span></button>' +
+    '<button class="hlink" onclick="window.open(\'https://skyforus.cn/\',\'_blank\')"><span class="t">skyforus.cn</span><span class="d">好友码查询 + 全服身高数据统计</span></button>' +
+    '<button class="hlink" onclick="window.open(\'https://dream10325.github.io/sky-cotl-height-tool/\',\'_blank\')"><span class="t">QR码身高工具</span><span class="d">免费 · 造型二维码截图本地计算，仅供参考</span></button>' +
+    '</div>' +
+    '<div class="height-tips">📌 好友码获取：游戏右上角 设置 → 好友 → 使用编号。好友码方式由测量员加好友实测（一号一码），查询完成后请勿拉黑测量员；QR码工具需用 设置 → 帐号 → 造型 QR code 的截图（⚠️ 不是加好友的二维码），本地计算完全免费，结果仅供参考。</div>' +
+    '</div>';
+
+  // 2) 身高档案
+  html += '<div class="height-sec"><h3>📖 身高档案 <span class="h-sub">记录每次查询结果，重塑后可对比变化</span></h3>';
+  if (heightRecords.length === 0) {
+    html += '<div class="empty" style="padding:28px 20px"><div class="ei">📏</div><p>暂无身高档案</p><p style="margin-top:4px;font-size:13px">点击右上角「新建身高档案」记录查询结果</p></div>';
+  } else {
+    heightRecords.forEach(function(r, i) {
+      var curTag = (r.cur !== '' && r.cur !== undefined) ? '当前 ' + r.cur + '号' + (heightTagLabel(r.cur) ? ' · ' + heightTagLabel(r.cur) : '') : '';
+      var maxTag = (r.max !== '' && r.max !== undefined) ? '最高 ' + r.max + '号' + (heightTagLabel(r.max) ? ' · ' + heightTagLabel(r.max) : '') : '';
+      var minTag = (r.min !== '' && r.min !== undefined) ? '最矮 ' + r.min + '号' + (heightTagLabel(r.min) ? ' · ' + heightTagLabel(r.min) : '') : '';
+      html += '<div class="record-card">' +
+        '<span class="rname">' + escapeHtml(r.name) + '</span>' +
+        (curTag ? '<span class="h-badge cur">' + curTag + '</span>' : '') +
+        (maxTag ? '<span class="h-badge max">' + maxTag + '</span>' : '') +
+        (minTag ? '<span class="h-badge min">' + minTag + '</span>' : '') +
+        '<div class="record-actions">' +
+        '<button title="编辑档案" onclick="openHeightModal(' + i + ')">✎</button>' +
+        '<button class="rd" title="删除档案" onclick="deleteHeightRecord(' + i + ')">🗑</button>' +
+        '</div>' +
+        '<span class="rdate">' + escapeHtml(r.date || '') + '</span>' +
+        '<div style="width:100%;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:center">' +
+        (r.code ? '<span class="rcode" onclick="copyText(\'' + escapeHtml(r.code) + '\')" title="点击复制好友码">好友码 ' + escapeHtml(r.code) + '</span>' : '') +
+        (r.note ? '<span class="rnote">' + escapeHtml(r.note) + '</span>' : '') +
+        '</div>' +
+        '</div>';
+    });
+  }
+  html += '</div>';
+
+  // 3) 身高对照表
+  html += '<div class="height-sec"><h3>📐 身高对照表（0~14号）</h3>' +
+    '<table class="height-table">' +
+    '<tr><th>号数</th><th>类型</th><th>说明</th></tr>' +
+    '<tr><td>0号</td><td>永高</td><td>全游戏最高，仅创号极小概率（不到0.1%）产出，重塑魔法刷不出</td></tr>' +
+    '<tr><td>1号</td><td>伪永高</td><td>重塑能刷出的最高身高，最热门的需求身高，穿搭基本不翻车</td></tr>' +
+    '<tr><td>2~7号</td><td>中等身高</td><td>百搭区间，酷感风 / 温柔风穿搭都适配</td></tr>' +
+    '<tr><td>8~13号</td><td>小个子</td><td>自带软萌感，搭配矮人面具、兔子头等可爱感拉满</td></tr>' +
+    '<tr><td>14号</td><td>永矮</td><td>全游戏最矮，仅创号极小概率产出，重塑刷不出</td></tr>' +
+    '</table>' +
+    '<div class="height-tips">💡 游戏内部数值越小代表身高越高。最高 / 最矮身高是账号固定属性，正常不会变；当前身高只有使用「体型重塑魔法」才会永久改变（在最高~最矮之间随机）；矮人面具是临时再压2档，摘下即恢复，不改变原生身高。矮人面具 + 14号永矮 = 全游戏最矮视觉效果。</div>' +
+    '</div>';
+
+  html += '</div>';
+  content.innerHTML = html;
+
+  // 好友码输入：自动加横杠格式化，并持久化保存
+  var codeInput = content.querySelector('#height-code');
+  if (codeInput) {
+    codeInput.addEventListener('input', function() {
+      var digits = this.value.replace(/\D/g, '').slice(0, 8);
+      this.value = digits.length > 4 ? digits.slice(0, 4) + '-' + digits.slice(4) : digits;
+      heightCode = this.value;
+      saveHeightData();
+    });
+  }
+}
+
+function heightNumOptions(sel) {
+  var o = '<option value="">未知 / 未测</option>';
+  for (var n = 0; n <= 14; n++) {
+    o += '<option value="' + n + '"' + (String(n) === String(sel) ? ' selected' : '') + '>' + n + '号 · ' + heightTagLabel(n) + '</option>';
+  }
+  return o;
+}
+
+function openHeightModal(idx) {
+  var isNew = !(idx >= 0);
+  var r = isNew
+    ? { name: '', code: heightCode, date: new Date().toISOString().slice(0, 10), cur: '', max: '', min: '', note: '' }
+    : heightRecords[idx];
+  var modal = document.getElementById('modal');
+  modal.innerHTML =
+    '<h3>' + (isNew ? '📏 新建身高档案' : '✏️ 编辑身高档案') + '</h3>' +
+    '<div class="field"><label>备注名</label>' +
+    '<input type="text" id="hr-name" value="' + escapeHtml(r.name) + '" placeholder="如：大号 / 小号 / 某某" autofocus></div>' +
+    '<div class="field"><label>好友码（选填）</label>' +
+    '<input type="text" id="hr-code" value="' + escapeHtml(r.code || '') + '" placeholder="XXXX-XXXX" maxlength="9" inputmode="numeric">' +
+    '<div class="modal-hint">游戏内 设置 → 好友 → 使用编号</div></div>' +
+    '<div class="field"><label>查询日期</label>' +
+    '<input type="date" id="hr-date" value="' + escapeHtml(r.date || '') + '"></div>' +
+    '<div class="field"><label>当前身高</label><select id="hr-cur">' + heightNumOptions(r.cur) + '</select></div>' +
+    '<div class="field"><label>最高身高（永高上限）</label><select id="hr-max">' + heightNumOptions(r.max) + '</select>' +
+    '<div class="modal-hint">账号固定属性，号数越小代表越高</div></div>' +
+    '<div class="field"><label>最矮身高（永矮下限）</label><select id="hr-min">' + heightNumOptions(r.min) + '</select></div>' +
+    '<div class="field"><label>备注（选填）</label>' +
+    '<input type="text" id="hr-note" value="' + escapeHtml(r.note || '') + '" placeholder="如：重塑出1号了 / 差2个重塑"></div>' +
+    '<div class="modal-actions">' +
+    '<button class="btn btn-outline" onclick="closeModal()">取消</button>' +
+    '<button class="btn btn-primary" onclick="confirmHeightRecord(' + (isNew ? -1 : idx) + ')">' + (isNew ? '确认添加' : '保存修改') + '</button>' +
+    '</div>';
+  document.getElementById('modal-overlay').classList.add('show');
+  setTimeout(function() {
+    var input = document.getElementById('hr-name');
+    if (input) {
+      input.focus();
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') confirmHeightRecord(isNew ? -1 : idx);
+      });
+    }
+  }, 50);
+}
+
+function confirmHeightRecord(idx) {
+  var name = document.getElementById('hr-name').value.trim();
+  if (!name) { showToast('请输入备注名'); return; }
+  var rec = {
+    name: name,
+    code: document.getElementById('hr-code').value.trim(),
+    date: document.getElementById('hr-date').value,
+    cur: document.getElementById('hr-cur').value,
+    max: document.getElementById('hr-max').value,
+    min: document.getElementById('hr-min').value,
+    note: document.getElementById('hr-note').value.trim()
+  };
+  if (rec.code) heightCode = rec.code;
+  if (idx >= 0) heightRecords[idx] = rec;
+  else heightRecords.unshift(rec);
+  saveHeightData();
+  closeModal();
+  render();
+  showToast(idx >= 0 ? '档案已更新' : '档案已保存');
+}
+
+function deleteHeightRecord(idx) {
+  var r = heightRecords[idx];
+  if (!r) return;
+  showConfirmModal('删除身高档案', '确定要删除「' + escapeHtml(r.name) + '」的身高档案吗？此操作不可撤销。', function() {
+    heightRecords.splice(idx, 1);
+    saveHeightData();
+    render();
+    showToast('已删除');
+  });
+}
+
+/* ============================================================
    搜索
 ============================================================ */
 function onSearch(type, value) {
@@ -1283,6 +1526,7 @@ function closeSidebar() {
 
 function init() {
   loadState();
+  loadHeightData();
   initDragAndDrop();
 
   // 点击遮罩关闭弹窗
