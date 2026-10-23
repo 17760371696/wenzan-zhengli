@@ -941,8 +941,8 @@ function renderCombinedView() {
   var partialSeasons = state.seasons.filter(function(s){ return s.subItems && !s.selected && s.subItems.some(function(sub){ return sub.selected; }); });
   var cardSeasons = state.seasons.filter(function(s){ return s.hasCard && !s.selected && !(s.subItems && s.subItems.some(function(sub){ return sub.selected; })); });
   var hasPartial = partialSeasons.length > 0 || cardSeasons.length > 0;
-  // 统计行：季节数 = 毕业 + 部分选中 + 有卡；礼包数 = 已选礼包数
-  var seasonCount = selSeasons.length + partialSeasons.length + cardSeasons.length;
+  // 统计行：季节数 = 「已选季节」（整季全选/毕业才计入，部分选中和有卡不算）；礼包数 = 已选礼包数
+  var seasonCount = selSeasons.length;
   var giftCount = selGifts.length;
   var summaryLine = '季节' + seasonCount + '礼包' + giftCount;
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !hasPartial) {
