@@ -120,6 +120,8 @@
   .combined-output .label-tag{color:var(--primary);font-weight:700}
   .combined-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
   .char-count{font-size:12px;color:var(--text-lighter);text-align:right;margin-top:8px}
+  .combined-summary{margin-bottom:10px;font-size:14px;color:var(--text-light);letter-spacing:.5px}
+  .combined-summary b{color:var(--primary);font-size:17px;font-weight:700;margin:0 2px}
   /* ===== Modal ===== */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)}
   .modal-overlay.show{display:flex;animation:fadeIn .2s}
@@ -254,11 +256,11 @@
 /* ============================================================
    文案整理 - 数据定义
 ============================================================ */
-const DEFAULT_SEASONS = ['感恩','追光','归属','音韵','魔法','圣岛','预言','梦想','集结','王子','风行','潜海','表演','破碎','欧若拉','追忆','夜行','拾光','归巢','九色鹿','筑巢','二重奏','姆明','彩染','青鸟','双星','迁徙','织光','狂欢','梵高'];
+const DEFAULT_SEASONS = ['感恩','追光','归属','音韵','魔法','圣岛','预言','梦想','集结','王子','风行','潜海','表演','破碎','欧若拉','追忆','夜行','拾光','归巢','九色鹿','筑巢','二重奏','姆明','彩染','青鸟','双星','迁徙','织光','狂欢','梵高','珍珠'];
 
 const DEFAULT_PERMANENT = ['晨岛','云野','雨林','霞谷','暮土','禁阁'];
 
-const DEFAULT_GIFTS = ['远行服饰','致爱装扮','向日葵裙','彩虹阔腿裤','披肩外袍','宝藏猎人','日光水母','潜水套装','月华套装','阔腿牛仔','优雅三件套','女巫长裙','爱丽丝套装','光之生物','滑冰套装','海灵套装','夏日凉鞋','玉兔拖鞋','雪人暖靴','悦动跑鞋','小狗拖鞋','史力奇裤子','祥云服饰','龙鳞束身','园丁裤','暗彩裤','进行曲制服','琅骏启岁','鹊桥相会','KFC厨师','连衣裙','必胜客装扮','星河烂漫','小黄鸭玩偶服','星流面具','绘彩面具','伯爵面具','回归童真','月华面纱','火焰墨镜','爱心墨镜','影院套装','紫框眼镜','幸运亨通','树精','白蝴蝶结','水母肩饰','寻宝挂饰','姆明饰品','冥龙套装','活力海牛','皮皮猫套装','有友帽子','飞鸟肩带','远行发型','绒帽','波浪发型','彩虹帽','巫师帽','朋克','鸦羽兜帽','双马尾','宝骏丹心','史力奇帽子','蝴蝶与花','小海牛配饰','橘子','鲤跃龙门','暖冬绒绒','小狗头饰','桂冠','雪花发卡','雪人头饰','贝壳发夹','玉兔头饰','墨镜头饰','大耳狗发饰','大耳狗头饰','爱心发箍','绿绒卷耳','蓝色守护帽','画笔发箍','探宝翎羽帽','四叶草','粽子发箍','小黄鸭发饰','鎏金魔法帽','小黑鸭头饰','莲花拂影','星月发饰','九色鹿角','星月耳环','金麟耳坠','彩虹耳钉','彩虹耳机','日光耳环','月光耳环','枯树枝','圣诞鹿角','向日葵耳环','云音伴游','tgc斗篷(黑底','创始人','小王子围巾','星球夹克','欧若拉之翼','奉献斗篷','莲花斗篷','妮妮斗篷','暗陨斗篷','星夜斗篷','麦浪斗篷','福娃套装','锦鲤套装','盘龙围巾','献瑞套装','玫瑰斗篷','海龟斗篷','潮汐套装','缤纷飘带','连帽斗篷','五周年线框','常驻线框','遥鲲披肩','纤云弄巧','蝙蝠套装','绿底蛛丝','皮皮猫斗篷','透明蛛丝','伯爵斗篷','鸦羽斗篷','瑞雪斗篷','白绒斗篷','雪人斗篷','羽绒服','暖冬围巾','流星斗篷','大耳狗斗篷','周年礼服','绊爱礼服','晶翼斗篷','文雀斗篷','飞蛾斗篷','绊爱套装','秘宝斗篷','风之旅人','超凡风旅','粽子斗篷','青衫落拓','小黄鸭雨衣','金穗披肩','雏鸟琴','白吉他','凯旋手碟','电吉他','欧若拉之声','小提琴','祥云伞','折扇','魔法棒','荷叶伞','向阳花伞','灯笼','黄伞','扫帚','骐骥迎福','星夜伞','七夕伞','月华琵琶','秋千','跷跷板','茶几','茶壶','野餐桌','球赛','夏日派对','立式钢琴','音乐桌','粽香蒸笼','披萨','狐狸','海牛玩偶','记忆水晶','萌新玩偶','小船','泡泡机','南瓜背包','皮皮猫玩偶','水晶球','棉花糖烤架','海螺','奥利奥玩偶','冲浪板','大耳狗玩偶','兔子洞','大铁头','kfc兑换码','必胜客cdk'];
+const DEFAULT_GIFTS = ['远行服饰','致爱装扮','向日葵裙','彩虹阔腿裤','披肩外袍','宝藏猎人','日光水母','潜水套装','月华套装','阔腿牛仔','优雅三件套','女巫长裙','爱丽丝套装','光之生物','滑冰套装','海灵套装','夏日凉鞋','玉兔拖鞋','雪人暖靴','悦动跑鞋','小狗拖鞋','史力奇裤子','祥云服饰','龙鳞束身','园丁裤','暗彩裤','进行曲制服','琅骏启岁','鹊桥相会','KFC厨师','连衣裙','必胜客装扮','星河烂漫','小黄鸭玩偶服','星流面具','绘彩面具','伯爵面具','回归童真','月华面纱','火焰墨镜','爱心墨镜','影院套装','紫框眼镜','幸运亨通','树精','白蝴蝶结','水母肩饰','皮皮猫肩饰','寻宝挂饰','姆明饰品','冥龙套装','活力海牛','皮皮猫套装','有友帽子','飞鸟肩带','远行发型','绒帽','波浪发型','彩虹帽','巫师帽','朋克','鸦羽兜帽','双马尾','宝骏丹心','史力奇帽子','蝴蝶与花','小海牛配饰','橘子','鲤跃龙门','暖冬绒绒','小狗头饰','桂冠','诡趣魔法帽','雪花发卡','雪人头饰','贝壳发夹','玉兔头饰','墨镜头饰','大耳狗发饰','大耳狗头饰','爱心发箍','绿绒卷耳','蓝色守护帽','画笔发箍','探宝翎羽帽','四叶草','粽子发箍','小黄鸭发饰','鎏金魔法帽','小黑鸭头饰','莲花拂影','星月发饰','九色鹿角','星月耳环','金麟耳坠','彩虹耳钉','彩虹耳机','日光耳环','月光耳环','枯树枝','圣诞鹿角','向日葵耳环','云音伴游','tgc斗篷','创始人','小王子围巾','星球夹克','欧若拉之翼','奉献斗篷','莲花斗篷','妮妮斗篷','暗陨斗篷','星夜斗篷','麦浪斗篷','福娃套装','锦鲤套装','盘龙围巾','献瑞套装','玫瑰斗篷','海龟斗篷','潮汐套装','缤纷飘带','连帽斗篷','五周年线框','常驻线框','遥鲲披肩','纤云弄巧','蝙蝠套装','绿底蛛丝','皮皮猫斗篷','透明蛛丝','伯爵斗篷','鸦羽斗篷','小恶魔斗篷','瑞雪斗篷','白绒斗篷','雪人斗篷','羽绒服','暖冬围巾','流星斗篷','大耳狗斗篷','周年礼服','绊爱礼服','晶翼斗篷','文雀斗篷','飞蛾斗篷','绊爱套装','秘宝斗篷','风之旅人','超凡风旅','粽子斗篷','青衫落拓','小黄鸭雨衣','金穗披肩','雏鸟琴','白吉他','凯旋手碟','电吉他','欧若拉之声','小提琴','祥云伞','折扇','魔法棒','荷叶伞','向阳花伞','灯笼','黄伞','扫帚','骐骥迎福','星夜伞','七夕伞','月华琵琶','秋千','跷跷板','茶几','茶壶','野餐桌','球赛','夏日派对','立式钢琴','音乐桌','粽香蒸笼','披萨','狐狸','海牛玩偶','记忆水晶','萌新玩偶','小船','泡泡机','南瓜背包','皮皮猫玩偶','水晶球','棉花糖烤架','海螺','奥利奥玩偶','冲浪板','大耳狗玩偶','兔子洞','大铁头','kfc兑换码','必胜客cdk'];
 
 const DEFAULT_LOTTERY = ['追光面具','金色音乐会','白底tgc','绘梦笔刷','奖杯'];
 
@@ -269,7 +271,8 @@ const GIFT_NAME_ALIASES = {
   '心印发饰': '爱心发箍',
   '粽子发饰': '粽子发箍',
   '小黄鸭玩偶': '小黄鸭玩偶服',
-  '绘彩面': '绘彩面具'
+  '绘彩面': '绘彩面具',
+  'tgc斗篷(黑底': 'tgc斗篷'
 };
 
 const STORAGE_KEY = 'wenan-zhengli-v1';
@@ -279,7 +282,8 @@ const SEASON_SUBS = {
   '迁徙': ['鞋子','裤子','面具'],
   '织光': ['面具','发型','斗篷'],
   '狂欢': ['发型','斗篷'],
-  '梵高': ['发型','斗篷','茶壶']
+  '梵高': ['发型','斗篷','茶壶'],
+  '珍珠': ['头饰','沙发','斗篷']
 };
 
 // 创建季节项（带子选项的季节含 subItems）
@@ -340,6 +344,38 @@ function loadState() {
       const p = JSON.parse(saved);
       state.permanent = p.permanent || [];
       state.seasons = p.seasons || [];
+      // 合并季节：按 DEFAULT_SEASONS 顺序重建，保留旧选中/有卡/子项状态，自动补入新增季节；自定义季节追加末尾
+      (function(){
+        var oldS = state.seasons;
+        var oldSMap = {};
+        var customS = [];
+        var customSeen = {};
+        oldS.forEach(function(s){
+          if (DEFAULT_SEASONS.indexOf(s.name) !== -1) {
+            if (!oldSMap[s.name]) oldSMap[s.name] = s;
+          } else if (!customSeen[s.name]) {
+            customSeen[s.name] = 1;
+            customS.push(s);
+          }
+        });
+        state.seasons = DEFAULT_SEASONS.map(function(name, i){
+          var item = makeSeasonItem(name, i);
+          var old = oldSMap[name];
+          if (old) {
+            item.selected = !!old.selected;
+            item.hasCard = !!old.hasCard;
+            if (item.subItems && old.subItems) {
+              item.subItems.forEach(function(sub){
+                var o = old.subItems.find(function(b){ return b.name === sub.name; });
+                if (o) sub.selected = !!o.selected;
+              });
+            }
+          }
+          return item;
+        }).concat(customS.map(function(s, i){
+          return { id: s.id || ('sc' + i), name: s.name, custom: true, selected: !!s.selected, hasCard: !!s.hasCard, subItems: s.subItems };
+        }));
+      })();
       // 合并礼包：按 DEFAULT_GIFTS 顺序重建，保留旧选中状态，自动补入新增默认项；自定义项追加末尾
       (function(){
         var oldG = p.gifts || [];
@@ -905,8 +941,13 @@ function renderCombinedView() {
   var partialSeasons = state.seasons.filter(function(s){ return s.subItems && !s.selected && s.subItems.some(function(sub){ return sub.selected; }); });
   var cardSeasons = state.seasons.filter(function(s){ return s.hasCard && !s.selected && !(s.subItems && s.subItems.some(function(sub){ return sub.selected; })); });
   var hasPartial = partialSeasons.length > 0 || cardSeasons.length > 0;
+  // 统计行：季节数 = 毕业 + 部分选中 + 有卡；礼包数 = 已选礼包数
+  var seasonCount = selSeasons.length + partialSeasons.length + cardSeasons.length;
+  var giftCount = selGifts.length;
+  var summaryLine = '季节' + seasonCount + '礼包' + giftCount;
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !hasPartial) {
     var emptyHtml = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
+    emptyHtml += '<div class="combined-summary">季节 <b>' + seasonCount + '</b> 礼包 <b>' + giftCount + '</b></div>';
     emptyHtml += '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
     if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
       var remainE = Math.ceil((10 * 60 * 1000 - (Date.now() - undoBackup.timestamp)) / 1000 / 60);
@@ -920,7 +961,7 @@ function renderCombinedView() {
   const seasonNames = formatSeasonText(selSeasons);
   const giftText = formatGiftText(selGifts);
   const lotteryNames = selLottery.map(i => i.name).join(' ');
-  const combinedText = '常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + (selLottery.length > 0 ? '\n抽奖：' + lotteryNames : '');
+  const combinedText = summaryLine + '\n常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + (selLottery.length > 0 ? '\n抽奖：' + lotteryNames : '');
   const charLen = combinedText.length;
 
   let html = '<div class="combined-wrap">';
@@ -934,6 +975,7 @@ function renderCombinedView() {
   html += '</div>';
 
   // 预览输出
+  html += '<div class="combined-summary">季节 <b>' + seasonCount + '</b> 礼包 <b>' + giftCount + '</b></div>';
   html += '<div class="combined-output" id="combined-output"></div>';
   html += '<div class="char-count">共 ' + charLen + ' 字符</div>';
 
