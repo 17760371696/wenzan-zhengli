@@ -120,8 +120,6 @@
   .combined-output .label-tag{color:var(--primary);font-weight:700}
   .combined-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
   .char-count{font-size:12px;color:var(--text-lighter);text-align:right;margin-top:8px}
-  .combined-summary{margin-bottom:10px;font-size:14px;color:var(--text-light);letter-spacing:.5px}
-  .combined-summary b{color:var(--primary);font-size:17px;font-weight:700;margin:0 2px}
   /* ===== Modal ===== */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(2px)}
   .modal-overlay.show{display:flex;animation:fadeIn .2s}
@@ -947,7 +945,6 @@ function renderCombinedView() {
   var summaryLine = '季节' + seasonCount + '礼包' + giftCount;
   if (selPermanent.length === 0 && selSeasons.length === 0 && selGifts.length === 0 && selLottery.length === 0 && !hasPartial) {
     var emptyHtml = '<div style="text-align:right;font-size:11px;opacity:0.7;margin-bottom:10px">一切解释权归球球小桐 微博：小宁嚼嚼</div>';
-    emptyHtml += '<div class="combined-summary">季节 <b>' + seasonCount + '</b> 礼包 <b>' + giftCount + '</b></div>';
     emptyHtml += '<div class="empty"><div class="ei">✨</div><p>暂无选择内容</p><p style="margin-top:8px;font-size:13px">请在「常驻」「季节」「礼包」和「抽奖」模块中选择需要的文案</p></div>';
     if (undoBackup && (Date.now() - undoBackup.timestamp) <= 10 * 60 * 1000) {
       var remainE = Math.ceil((10 * 60 * 1000 - (Date.now() - undoBackup.timestamp)) / 1000 / 60);
@@ -975,7 +972,6 @@ function renderCombinedView() {
   html += '</div>';
 
   // 预览输出
-  html += '<div class="combined-summary">季节 <b>' + seasonCount + '</b> 礼包 <b>' + giftCount + '</b></div>';
   html += '<div class="combined-output" id="combined-output"></div>';
   html += '<div class="char-count">共 ' + charLen + ' 字符</div>';
 
@@ -1192,11 +1188,18 @@ function confirmAdd(type) {
    复制
 ============================================================ */
 function copyCombined() {
-  const permanentText = formatPermanentText(getSelected('permanent'));
-  const seasonNames = formatSeasonText(getSelected('season'));
-  const giftText = formatGiftText(getSelected('gift'));
-  const lotteryNames = getSelected('lottery').map(i => i.name).join(' ');
-  const text = '常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + (lotteryNames ? '\n抽奖：' + lotteryNames : '');
+  // 直接复制展示框里的全部内容（含首行「季节X礼包Y」统计）
+  var outputEl = document.getElementById('combined-output');
+  var text = outputEl ? outputEl.textContent : '';
+  if (!text) {
+    var permanentText = formatPermanentText(getSelected('permanent'));
+    var seasonNames = formatSeasonText(getSelected('season'));
+    var giftText = formatGiftText(getSelected('gift'));
+    var lotteryNames = getSelected('lottery').map(i => i.name).join(' ');
+    var seasonCount = getSelected('season').length;
+    var giftCount = getSelected('gift').length;
+    text = '季节' + seasonCount + '礼包' + giftCount + '\n常驻：' + permanentText + '\n季节：' + seasonNames + '\n礼包：' + giftText + (lotteryNames ? '\n抽奖：' + lotteryNames : '');
+  }
 
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(text).then(function() {
